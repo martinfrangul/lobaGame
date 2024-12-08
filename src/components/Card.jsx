@@ -13,6 +13,8 @@ const Card = ({ rank, suit, onClick, isSelected }) => {
     spades: "black",
   };
 
+  console.log("Rendering card:", { rank, suit }); // Verifica los valores de rank y sui
+
   return (
     <div
       className={`card ${isSelected ? "selected" : ""}`}

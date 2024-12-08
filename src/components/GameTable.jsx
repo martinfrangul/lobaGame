@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import PlayerHand from "./PlayerHand";
+import Card from "./Card";
 import DiscardPile from "./DiscardPile";
 import { useGameContext } from "../context/gameState";
 import { isValidCombination } from "../utils/gameUtils";
@@ -40,14 +41,46 @@ const GameTable = () => {
         : [...prev, card]
     );
   };
-
+  
+  const orderCards = (cards) => {
+    const rankOrder = {
+      A: 1,  // Por defecto, el As es el más bajo
+      2: 2,
+      3: 3,
+      4: 4,
+      5: 5,
+      6: 6,
+      7: 7,
+      8: 8,
+      9: 9,
+      10: 10,
+      J: 11,
+      Q: 12,
+      K: 13,
+    };
+  
+    // Determinar si el As debe ser alto o bajo
+    const hasKing = cards.some((card) => card.rank === "K");
+    if (hasKing) {
+      rankOrder["A"] = 14; // Si hay una K, el As se considera como el más alto
+    }
+  
+    return [...cards].sort((a, b) => {
+      const rankA = rankOrder[a.rank];
+      const rankB = rankOrder[b.rank];
+      return rankA - rankB;
+    });
+  };
+  
   const handleDropCombination = () => {
     if (selectedCards.length < 3) {
       alert("Necesitas al menos 3 cartas para formar una combinación.");
       return;
     }
-
+  
     if (isValidCombination(selectedCards)) {
+      const orderedCombination = orderCards(selectedCards); // Ordenamos las cartas
+  
       const updatedPlayers = players.map((player, index) => {
         if (index === currentTurn) {
           return {
@@ -56,12 +89,12 @@ const GameTable = () => {
               (card) =>
                 !selectedCards.some((selected) => selected.id === card.id)
             ),
-            combinations: [...player.combinations, selectedCards],
+            combinations: [...player.combinations, orderedCombination], // Guardar la combinación ordenada
           };
         }
         return player;
       });
-
+  
       setPlayers(updatedPlayers);
       setSelectedCards([]);
     } else {
@@ -69,6 +102,7 @@ const GameTable = () => {
       setSelectedCards([]);
     }
   };
+  
 
   const handleDrawCard = (source) => {
     if (cardDrawn) {
@@ -137,21 +171,27 @@ const GameTable = () => {
       {gameOver && <h1>¡Juego terminado!</h1>}
 
       <div className="center-area">
-        {!gameOver && (
-          <>
-            <button onClick={() => handleDrawCard("deck")} disabled={cardDrawn}>
-              Robar del mazo
-            </button>
-            <button
-              onClick={() => handleDrawCard("discardPile")}
-              disabled={cardDrawn || discardPile.length === 0}
-            >
-              Robar del pozo
-            </button>
-          </>
-        )}
-        <DiscardPile topCard={discardPile[discardPile.length - 1]} />
-      </div>
+  {!gameOver && (
+    <>
+      <button onClick={() => handleDrawCard("deck")} disabled={cardDrawn}>
+        Robar del mazo
+      </button>
+      <button
+        onClick={() => handleDrawCard("discardPile")}
+        disabled={cardDrawn || discardPile.length === 0}
+      >
+        Robar del pozo
+      </button>
+      {currentTurn !== null && (
+        <>
+          <button onClick={handleDropCombination}>Bajar combinación</button>
+          <button onClick={handleDiscard}>Descartar</button>
+        </>
+      )}
+    </>
+  )}
+  <DiscardPile topCard={discardPile[discardPile.length - 1]} />
+</div>
 
       {/* Renderizado de jugadores */}
       {players.map((player, index) => (
@@ -178,28 +218,15 @@ const GameTable = () => {
             {player?.combinations?.map((combination, combIndex) => (
               <div key={combIndex} className="combination">
                 {combination.map((card) => (
-                  <div
+                  <Card
                     key={card.id}
-                    className="card"
-                    style={{
-                      borderColor:
-                        card.suit === "hearts" || card.suit === "diamonds"
-                          ? "red"
-                          : "black",
-                    }}
-                  >
-                    {card.rank} {card.suit[0].toUpperCase()}
-                  </div>
+                    rank={card.rank} // Mostrará el número o letra de la carta
+                    suit={card.suit} // Mostrará el ícono correspondiente
+                  />
                 ))}
               </div>
             ))}
           </div>
-          {currentTurn === index && (
-            <>
-              <button onClick={handleDropCombination}>Bajar combinación</button>
-              <button onClick={handleDiscard}>Descartar</button>
-            </>
-          )}
         </div>
       ))}
     </div>
