@@ -1041,63 +1041,75 @@ const GameTable = () => {
   }
 
   return (
-    <div className="game-table">
+    <div className="game-table layout-3-4">
       {gameOver && <h1>¡Juego terminado!</h1>}
 
+      <header className="top-bar">
+        <span className="turn-indicator">Turno: {players[currentTurn]?.name}</span>
+        <span className="scoreboard">
+          {players.map((p, i) => (
+            <span key={i} className={p.eliminated ? "eliminated" : ""}>
+              {p.name}: {p.points}
+              {p.eliminated ? " (eliminado)" : ""}
+            </span>
+          ))}
+        </span>
+        <button className="icon-btn" onClick={() => setShowLegend(true)} title="Leyenda">❓</button>
+      </header>
+
       <div className="center-area">
-  {!gameOver && (
-    <>
-      <button className="icon-btn" onClick={() => handleDrawCard("deck")} disabled={cardDrawn} title="Robar del mazo">🂠</button>
-      <button className="icon-btn" onClick={() => handleDrawCard("discardPile")} disabled={cardDrawn || discardPile.length === 0} title="Robar del pozo">📥</button>
-      {currentTurn !== null && (
-        <>
-          <button className="icon-btn" onClick={handleDropCombination} title="Bajar combinación">➕</button>
-          <button className="icon-btn" onClick={handleLayoff} title="Agregar a combinación">📎</button>
-          <button className="icon-btn" onClick={handleSopar} title="Sopar seleccionadas">💨</button>
-          {jokerMode === "mobile" && (
-            <>
-              <button className="icon-btn" onClick={handleSubstituteJoker} title="Sustituir comodín">🔄</button>
-              <button className="icon-btn" onClick={handleReplaceAndMoveJoker} title="Reemplazar y mover comodín">↔️</button>
-            </>
-          )}
-          <button className="icon-btn" onClick={handleDiscard} title="Descartar">🗑️</button>
-          <button className="icon-btn" onClick={() => setShowLegend(true)} title="Leyenda">❓</button>
-        </>
-      )}
-    </>
-  )}
-  <DiscardPile topCard={discardPile[discardPile.length - 1]} />
-</div>
-
-      {showLegend && (
-        <div className="modal-overlay">
-          <div className="modal">
-            <h3>Leyenda de iconos</h3>
-            <ul className="legend-list">
-              <li>🂠 Robar del mazo</li>
-              <li>📥 Robar del pozo</li>
-              <li>➕ Bajar combinación</li>
-              <li>📎 Agregar a combinación</li>
-              <li>💨 Sopar seleccionadas</li>
-              <li>🔄 Sustituir comodín (solo modo móvil)</li>
-              <li>↔️ Reemplazar y mover comodín (solo modo móvil)</li>
-              <li>🗑️ Descartar</li>
-            </ul>
-            <button onClick={() => setShowLegend(false)}>Cerrar</button>
-          </div>
+        {!gameOver && (
+          <>
+            <button className="icon-btn" onClick={() => handleDrawCard("deck")} disabled={cardDrawn} title="Robar del mazo">🂠</button>
+            <button className="icon-btn" onClick={() => handleDrawCard("discardPile")} disabled={cardDrawn || discardPile.length === 0} title="Robar del pozo">📥</button>
+            {currentTurn !== null && (
+              <>
+                <button className="icon-btn" onClick={handleDropCombination} title="Bajar combinación">➕</button>
+                <button className="icon-btn" onClick={handleLayoff} title="Agregar a combinación">📎</button>
+                <button className="icon-btn" onClick={handleSopar} title="Sopar seleccionadas">💨</button>
+                {jokerMode === "mobile" && (
+                  <>
+                    <button className="icon-btn" onClick={handleSubstituteJoker} title="Sustituir comodín">🔄</button>
+                    <button className="icon-btn" onClick={handleReplaceAndMoveJoker} title="Reemplazar y mover comodín">↔️</button>
+                  </>
+                )}
+                <button className="icon-btn" onClick={handleDiscard} title="Descartar">🗑️</button>
+              </>
+            )}
+          </>
+        )}
+        <div className="deck-row">
+          <span className="deck-label">Mazo</span>
+          <DiscardPile topCard={discardPile[discardPile.length - 1]} />
         </div>
-      )}
 
-      <div className="scoreboard">
-        {players.map((p, i) => (
-          <span key={i} className={p.eliminated ? "eliminated" : ""}>
-            {p.name}: {p.points}
-            {p.eliminated ? " (eliminado)" : ""}
-          </span>
-        ))}
+        <div className="table-combinations">
+          {players.map((player, pIndex) => (
+            <div key={pIndex} className="player-combinations">
+              <span className="combo-owner">{player.name}</span>
+              {(player.combinations || []).map((meld, meldIndex) => {
+                const isSelectedMeld =
+                  selectedMeld &&
+                  selectedMeld.playerIndex === pIndex &&
+                  selectedMeld.meldIndex === meldIndex;
+                return (
+                  <div
+                    key={meld.id || meldIndex}
+                    className={`combination ${isSelectedMeld ? "selected-meld" : ""}`}
+                    onClick={() => handleMeldClick(pIndex, meldIndex)}
+                  >
+                    {meld.cards.map((card) => (
+                      <Card key={card.id} rank={card.rank} suit={card.suit} />
+                    ))}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Renderizado de jugadores */}
+      {/* Renderizado de jugadores (solo manos) */}
       {players.map((player, index) => (
         <div
           key={index}
@@ -1125,31 +1137,27 @@ const GameTable = () => {
             }
           />
           <h3>{player.name}</h3>
-          <div className="combinations-area">
-            {player?.combinations?.map((meld, combIndex) => {
-              const isSelectedMeld =
-                selectedMeld &&
-                selectedMeld.playerIndex === index &&
-                selectedMeld.meldIndex === combIndex;
-              return (
-                <div
-                  key={meld.id || combIndex}
-                  className={`combination ${isSelectedMeld ? "selected-meld" : ""}`}
-                  onClick={() => handleMeldClick(index, combIndex)}
-                >
-                  {meld.cards.map((card) => (
-                    <Card
-                      key={card.id}
-                      rank={card.rank}
-                      suit={card.suit}
-                    />
-                  ))}
-                </div>
-              );
-            })}
-          </div>
         </div>
       ))}
+
+      {showLegend && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>Leyenda de iconos</h3>
+            <ul className="legend-list">
+              <li>🂠 Robar del mazo</li>
+              <li>📥 Robar del pozo</li>
+              <li>➕ Bajar combinación</li>
+              <li>📎 Agregar a combinación</li>
+              <li>💨 Sopar seleccionadas</li>
+              <li>🔄 Sustituir comodín (solo modo móvil)</li>
+              <li>↔️ Reemplazar y mover comodín (solo modo móvil)</li>
+              <li>🗑️ Descartar</li>
+            </ul>
+            <button onClick={() => setShowLegend(false)}>Cerrar</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
