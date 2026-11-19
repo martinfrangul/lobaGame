@@ -1,68 +1,75 @@
-export const isValidCombination = (cards, allowJoker = false) => {
-  if (cards.length < 3) {
+const RANK_ORDER = [
+  "A", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+  "J", "Q", "K",
+];
+
+export const isValidCombination = (cards) => {
+  if (!Array.isArray(cards) || cards.length < 3) {
     return false; // Las combinaciones deben tener al menos 3 cartas
   }
 
-  const rankOrder = [
-    "2", "3", "4", "5", "6", "7", "8", "9", "10",
-    "J", "Q", "K", "A"
-  ];
-
-  // Filtrar comodines si están permitidos
   const jokers = cards.filter((card) => card.rank === "JOKER");
-  const nonJokerCards = cards.filter((card) => card.rank !== "JOKER");
+  const naturals = cards.filter((card) => card.rank !== "JOKER");
 
-  // Tricas (grupo de mismo rango, diferentes palos)
+  // Pierna (grupo): mismo rango, palos distintos, SOLO cartas naturales
   const isGroup = (() => {
-    if (nonJokerCards.length < 3 && (!allowJoker || jokers.length === 0)) {
-      return false;
-    }
+    if (jokers.length > 0) return false;
+    if (naturals.length < 3) return false;
 
-    const allSameRank = nonJokerCards.every(
-      (card) => card.rank === nonJokerCards[0].rank
+    const allSameRank = naturals.every(
+      (card) => card.rank === naturals[0].rank
     );
-
-    const uniqueSuits = new Set(nonJokerCards.map((card) => card.suit));
-    const noRepeatedSuits = uniqueSuits.size === nonJokerCards.length;
+    const uniqueSuits = new Set(naturals.map((card) => card.suit));
+    const noRepeatedSuits = uniqueSuits.size === naturals.length;
 
     return allSameRank && noRepeatedSuits;
   })();
 
   if (isGroup) return true;
 
-  // Escaleras (consecutivos y mismo palo)
+  // Escalera: consecutivas del mismo palo; los comodines solo aquí
   const isStraight = (() => {
-    if (nonJokerCards.length < 3 && (!allowJoker || jokers.length === 0)) {
-      return false;
-    }
+    if (naturals.length === 0) return false; // hace falta al menos una carta natural (define el palo)
+    if (naturals.length < 3 && jokers.length === 0) return false;
 
-    const sortedCards = nonJokerCards.slice().sort((a, b) => {
-      return rankOrder.indexOf(a.rank) - rankOrder.indexOf(b.rank);
-    });
+    const allSameSuit = naturals.every(
+      (card) => card.suit === naturals[0].suit
+    );
+    if (!allSameSuit) return false;
+
+    const sorted = naturals
+      .slice()
+      .sort(
+        (a, b) =>
+          RANK_ORDER.indexOf(a.rank) - RANK_ORDER.indexOf(b.rank)
+      );
+
+    // Detectar duplicados o desorden
+    for (let i = 1; i < sorted.length; i++) {
+      if (RANK_ORDER.indexOf(sorted[i].rank) <= RANK_ORDER.indexOf(sorted[i - 1].rank)) {
+        return false;
+      }
+    }
 
     let jokerCount = jokers.length;
 
-    for (let i = 1; i < sortedCards.length; i++) {
-      const currentIndex = rankOrder.indexOf(sortedCards[i].rank);
-      const previousIndex = rankOrder.indexOf(sortedCards[i - 1].rank);
-
-      if (sortedCards[i].suit !== sortedCards[i - 1].suit) {
-        return false; // No es el mismo palo
-      }
-
-      if (currentIndex !== previousIndex + 1) {
-        if (jokerCount > 0) {
-          jokerCount--; // Usa un comodín para rellenar la brecha
-        } else {
-          return false; // No es consecutivo y no hay más comodines
-        }
+    // Rellenar huecos internos con comodines
+    for (let i = 1; i < sorted.length; i++) {
+      const prevIndex = RANK_ORDER.indexOf(sorted[i - 1].rank);
+      const currIndex = RANK_ORDER.indexOf(sorted[i].rank);
+      const gap = currIndex - prevIndex - 1;
+      if (gap < 0) return false;
+      if (gap > 0) {
+        if (jokerCount < gap) return false;
+        jokerCount -= gap;
       }
     }
 
+    // Los comodines restantes pueden ir a los extremos (siempre válido)
     return true;
   })();
 
   if (isStraight) return true;
 
-  return false; // No es ni trica ni escalera
+  return false;
 };

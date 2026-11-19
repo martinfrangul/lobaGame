@@ -57,7 +57,7 @@ const GameTable = () => {
   
   const orderCards = (cards) => {
     const rankOrder = {
-      A: 1,  // Por defecto, el As es el más bajo
+      A: 1,
       2: 2,
       3: 3,
       4: 4,
@@ -71,16 +71,13 @@ const GameTable = () => {
       Q: 12,
       K: 13,
     };
-  
-    // Determinar si el As debe ser alto o bajo
-    const hasKing = cards.some((card) => card.rank === "K");
-    if (hasKing) {
-      rankOrder["A"] = 14; // Si hay una K, el As se considera como el más alto
-    }
-  
+
     return [...cards].sort((a, b) => {
-      const rankA = rankOrder[a.rank];
-      const rankB = rankOrder[b.rank];
+      // Los comodines se mantienen al final al ordenar
+      if (a.rank === "JOKER" && b.rank !== "JOKER") return 1;
+      if (b.rank === "JOKER" && a.rank !== "JOKER") return -1;
+      const rankA = rankOrder[a.rank] ?? 99;
+      const rankB = rankOrder[b.rank] ?? 99;
       return rankA - rankB;
     });
   };
