@@ -574,6 +574,55 @@ const GameTable = () => {
     }
   };
 
+  const isSoparable = (card) => {
+    return players.some((player) =>
+      (player.combinations || []).some((meld) => {
+        const cards = meld.cards || [];
+        const isGroup =
+          cards.length >= 3 &&
+          cards.every((c) => c.rank === cards[0].rank) &&
+          !cards.some((c) => c.rank === "JOKER");
+        if (!isGroup) return false;
+        return cards.some((c) => c.rank === card.rank && c.suit === card.suit);
+      })
+    );
+  };
+
+  const handleSopar = () => {
+    if (selectedCards.length === 0) {
+      alert("Selecciona las cartas que quieres sopar.");
+      return;
+    }
+    if (!selectedCards.every(isSoparable)) {
+      alert("Solo se pueden sopar cartas idénticas a una pierna en mesa.");
+      return;
+    }
+
+    const soparedIds = new Set(selectedCards.map((c) => c.id));
+
+    setDiscardPile((prev) => [...prev, ...selectedCards]);
+    setPlayers((prev) =>
+      prev.map((player, index) =>
+        index === currentTurn
+          ? {
+              ...player,
+              hand: player.hand.filter((c) => !soparedIds.has(c.id)),
+            }
+          : player
+      )
+    );
+
+    const currentPlayer = players[currentTurn];
+    const newHand = currentPlayer.hand.filter((c) => !soparedIds.has(c.id));
+
+    setSelectedCards([]);
+
+    if (newHand.length === 0) {
+      // Se considera que sales en ese momento
+      endRound(currentTurn);
+    }
+  };
+
   const handleDiscard = () => {
     if (!cardDrawn) {
       alert("Primero debes tomar una carta.");
@@ -839,6 +888,7 @@ const GameTable = () => {
         <>
           <button onClick={handleDropCombination}>Bajar combinación</button>
           <button onClick={handleLayoff}>Agregar a combinación</button>
+          <button onClick={handleSopar}>Sopar seleccionadas</button>
           {jokerMode === "mobile" && (
             <>
               <button onClick={handleSubstituteJoker}>Sustituir comodín</button>
@@ -883,6 +933,13 @@ const GameTable = () => {
             selectedCards={currentTurn === index ? selectedCards : []}
             onCardSelect={currentTurn === index ? handleCardSelect : undefined}
             isFaceDown={currentTurn !== index}
+            soparableIds={
+              currentTurn === index
+                ? (players[index]?.hand || [])
+                    .filter(isSoparable)
+                    .map((c) => c.id)
+                : []
+            }
           />
           <h3>{player.name}</h3>
           <div className="combinations-area">
