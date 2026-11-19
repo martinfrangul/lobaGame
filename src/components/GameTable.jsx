@@ -1136,7 +1136,6 @@ const GameTable = () => {
                 : []
             }
           />
-          <h3>{player.name}</h3>
         </div>
       ))}
 
