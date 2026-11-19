@@ -36,6 +36,7 @@ const GameTable = () => {
   const [pendingJokers, setPendingJokers] = useState(0);
   const [jokerChoice, setJokerChoice] = useState(null); // { cards, options, context }
   const [moveChoice, setMoveChoice] = useState(null); // { meldRef, naturalCard, jokerCard, leftRank, rightRank }
+  const [showLegend, setShowLegend] = useState(false);
 
   const startGame = () => {
     const tempDeck = [...deck];
@@ -868,6 +869,177 @@ const GameTable = () => {
     );
   }
 
+  // Layout específico para 2 jugadores (funcional primero)
+  if (players.length === 2) {
+    return (
+      <div className="game-table layout-2p">
+        {gameOver && (
+          <div className="game-over-overlay">
+            <h1>¡Juego terminado!</h1>
+          </div>
+        )}
+
+        <header className="top-bar">
+          <span className="turn-indicator">
+            Turno: {players[currentTurn]?.name}
+          </span>
+          <span className="scoreboard">
+            {players.map((p, i) => (
+              <span key={i} className={p.eliminated ? "eliminated" : ""}>
+                {p.name}: {p.points}
+                {p.eliminated ? " (eliminado)" : ""}
+              </span>
+            ))}
+          </span>
+          <button className="icon-btn" onClick={() => setShowLegend(true)} title="Leyenda">
+            ❓
+          </button>
+        </header>
+
+        <section className="opponent-area">
+          <h3>
+            {players[1].name} — {players[1].points} pts
+            {players[1].eliminated ? " (eliminado)" : ""}
+          </h3>
+          <PlayerHand
+            cards={players[1].hand}
+            selectedCards={[]}
+            onCardSelect={undefined}
+            isFaceDown={true}
+            soparableIds={[]}
+          />
+        </section>
+
+        <section className="table-area">
+          <div className="deck-row">
+            <button
+              className="icon-btn"
+              onClick={() => handleDrawCard("deck")}
+              disabled={cardDrawn}
+              title="Robar del mazo"
+            >
+              🂠
+            </button>
+            <DiscardPile topCard={discardPile[discardPile.length - 1]} />
+          </div>
+
+          <div className="table-combinations">
+            {players.map((player, pIndex) => (
+              <div key={pIndex} className="player-combinations">
+                <span className="combo-owner">{player.name}</span>
+                {(player.combinations || []).map((meld, meldIndex) => {
+                  const isSelectedMeld =
+                    selectedMeld &&
+                    selectedMeld.playerIndex === pIndex &&
+                    selectedMeld.meldIndex === meldIndex;
+                  return (
+                    <div
+                      key={meld.id || meldIndex}
+                      className={`combination ${isSelectedMeld ? "selected-meld" : ""}`}
+                      onClick={() => handleMeldClick(pIndex, meldIndex)}
+                    >
+                      {meld.cards.map((card) => (
+                        <Card key={card.id} rank={card.rank} suit={card.suit} />
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="player-area-bottom">
+          <PlayerHand
+            cards={players[0].hand}
+            selectedCards={selectedCards}
+            onCardSelect={handleCardSelect}
+            isFaceDown={false}
+            soparableIds={players[0].hand
+              .filter(isSoparable)
+              .map((c) => c.id)}
+          />
+
+          <div className="actions">
+            <button
+              className="icon-btn"
+              onClick={() => handleDrawCard("discardPile")}
+              disabled={cardDrawn || discardPile.length === 0}
+              title="Robar del pozo"
+            >
+              📥
+            </button>
+            <button
+              className="icon-btn"
+              onClick={handleDropCombination}
+              title="Bajar combinación"
+            >
+              ➕
+            </button>
+            <button
+              className="icon-btn"
+              onClick={handleLayoff}
+              title="Agregar a combinación"
+            >
+              📎
+            </button>
+            <button
+              className="icon-btn"
+              onClick={handleSopar}
+              title="Sopar seleccionadas"
+            >
+              💨
+            </button>
+            {jokerMode === "mobile" && (
+              <>
+                <button
+                  className="icon-btn"
+                  onClick={handleSubstituteJoker}
+                  title="Sustituir comodín"
+                >
+                  🔄
+                </button>
+                <button
+                  className="icon-btn"
+                  onClick={handleReplaceAndMoveJoker}
+                  title="Reemplazar y mover comodín"
+                >
+                  ↔️
+                </button>
+              </>
+            )}
+            <button
+              className="icon-btn"
+              onClick={handleDiscard}
+              title="Descartar"
+            >
+              🗑️
+            </button>
+          </div>
+        </section>
+
+        {showLegend && (
+          <div className="modal-overlay">
+            <div className="modal">
+              <h3>Leyenda de iconos</h3>
+              <ul className="legend-list">
+                <li>🂠 Robar del mazo</li>
+                <li>📥 Robar del pozo</li>
+                <li>➕ Bajar combinación</li>
+                <li>📎 Agregar a combinación</li>
+                <li>💨 Sopar seleccionadas</li>
+                <li>🔄 Sustituir comodín (solo modo móvil)</li>
+                <li>↔️ Reemplazar y mover comodín (solo modo móvil)</li>
+                <li>🗑️ Descartar</li>
+              </ul>
+              <button onClick={() => setShowLegend(false)}>Cerrar</button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="game-table">
       {gameOver && <h1>¡Juego terminado!</h1>}
@@ -875,35 +1047,46 @@ const GameTable = () => {
       <div className="center-area">
   {!gameOver && (
     <>
-      <button onClick={() => handleDrawCard("deck")} disabled={cardDrawn}>
-        Robar del mazo
-      </button>
-      <button
-        onClick={() => handleDrawCard("discardPile")}
-        disabled={cardDrawn || discardPile.length === 0}
-      >
-        Robar del pozo
-      </button>
+      <button className="icon-btn" onClick={() => handleDrawCard("deck")} disabled={cardDrawn} title="Robar del mazo">🂠</button>
+      <button className="icon-btn" onClick={() => handleDrawCard("discardPile")} disabled={cardDrawn || discardPile.length === 0} title="Robar del pozo">📥</button>
       {currentTurn !== null && (
         <>
-          <button onClick={handleDropCombination}>Bajar combinación</button>
-          <button onClick={handleLayoff}>Agregar a combinación</button>
-          <button onClick={handleSopar}>Sopar seleccionadas</button>
+          <button className="icon-btn" onClick={handleDropCombination} title="Bajar combinación">➕</button>
+          <button className="icon-btn" onClick={handleLayoff} title="Agregar a combinación">📎</button>
+          <button className="icon-btn" onClick={handleSopar} title="Sopar seleccionadas">💨</button>
           {jokerMode === "mobile" && (
             <>
-              <button onClick={handleSubstituteJoker}>Sustituir comodín</button>
-              <button onClick={handleReplaceAndMoveJoker}>
-                Reemplazar y mover comodín
-              </button>
+              <button className="icon-btn" onClick={handleSubstituteJoker} title="Sustituir comodín">🔄</button>
+              <button className="icon-btn" onClick={handleReplaceAndMoveJoker} title="Reemplazar y mover comodín">↔️</button>
             </>
           )}
-          <button onClick={handleDiscard}>Descartar</button>
+          <button className="icon-btn" onClick={handleDiscard} title="Descartar">🗑️</button>
+          <button className="icon-btn" onClick={() => setShowLegend(true)} title="Leyenda">❓</button>
         </>
       )}
     </>
   )}
   <DiscardPile topCard={discardPile[discardPile.length - 1]} />
 </div>
+
+      {showLegend && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>Leyenda de iconos</h3>
+            <ul className="legend-list">
+              <li>🂠 Robar del mazo</li>
+              <li>📥 Robar del pozo</li>
+              <li>➕ Bajar combinación</li>
+              <li>📎 Agregar a combinación</li>
+              <li>💨 Sopar seleccionadas</li>
+              <li>🔄 Sustituir comodín (solo modo móvil)</li>
+              <li>↔️ Reemplazar y mover comodín (solo modo móvil)</li>
+              <li>🗑️ Descartar</li>
+            </ul>
+            <button onClick={() => setShowLegend(false)}>Cerrar</button>
+          </div>
+        </div>
+      )}
 
       <div className="scoreboard">
         {players.map((p, i) => (
