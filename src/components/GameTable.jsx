@@ -4,7 +4,7 @@ import Card from "./Card";
 import DiscardPile from "./DiscardPile";
 import { useGameContext } from "../context/gameState";
 import { isValidCombination, possibleJokerAssignments, RANKS } from "../utils/gameUtils";
-import { shuffleDeck } from "../utils/deck";
+import { generateDeck, shuffleDeck } from "../utils/deck";
 
 const GameTable = () => {
   const {
@@ -18,12 +18,20 @@ const GameTable = () => {
     setCurrentTurn,
   } = useGameContext();
 
+  const cardValue = (card) => {
+    if (card.rank === "JOKER") return 25;
+    if (card.rank === "A") return 15;
+    if (["J", "Q", "K"].includes(card.rank)) return 10;
+    return Number(card.rank) || 0;
+  };
+
   const [selectedCards, setSelectedCards] = useState([]);
   const [cardDrawn, setCardDrawn] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [playerCount, setPlayerCount] = useState(4);
   const [jokerMode, setJokerMode] = useState("mobile"); // "fixed" | "mobile"
+  const [gameMode, setGameMode] = useState("menos"); // "menos" | "mas"
   const [selectedMeld, setSelectedMeld] = useState(null); // { playerIndex, meldIndex }
   const [pendingJokers, setPendingJokers] = useState(0);
   const [jokerChoice, setJokerChoice] = useState(null); // { cards, options, context }
@@ -36,6 +44,8 @@ const GameTable = () => {
       hand: tempDeck.splice(0, 9),
       points: 0,
       combinations: [],
+      eliminated: false,
+      reenganches: 0,
     }));
     const firstDiscard = tempDeck.length > 0 ? tempDeck.splice(0, 1)[0] : null;
 
@@ -594,8 +604,8 @@ const GameTable = () => {
     );
 
     if (newHand.length === 0) {
-      setGameOver(true);
-      alert(`¡${currentPlayer.name} ha ganado!`);
+      // Fin de ronda (el jugador "sale")
+      endRound(currentTurn);
       return;
     }
 
@@ -604,6 +614,109 @@ const GameTable = () => {
     setSelectedMeld(null);
     setPendingJokers(0);
     setCurrentTurn((currentTurn + 1) % players.length);
+  };
+
+  const sumHandValue = (hand) => hand.reduce((sum, c) => sum + cardValue(c), 0);
+
+  const sumCombinationValue = (combinations) =>
+    combinations.reduce(
+      (sum, meld) => sum + meld.cards.reduce((s, c) => s + cardValue(c), 0),
+      0
+    );
+
+  const endRound = (winnerIndex) => {
+    const winner = players[winnerIndex];
+
+    if (gameMode === "menos") {
+      // Penalización: el que sale anota 0; el resto suma su mano
+      const updated = players.map((player, index) => {
+        if (player.eliminated) return player;
+        if (index === winnerIndex) return { ...player, points: player.points }; // 0 esta ronda
+        return { ...player, points: player.points + sumHandValue(player.hand) };
+      });
+
+      // Eliminación a 101
+      const afterElimination = updated.map((player) => {
+        if (player.eliminated) return player;
+        if (player.points >= 101) {
+          return { ...player, eliminated: true };
+        }
+        return player;
+      });
+
+      const active = afterElimination.filter((p) => !p.eliminated);
+
+      // Victoria: último en pie
+      if (active.length <= 1) {
+        if (active.length === 1) {
+          setPlayers(afterElimination);
+          setGameOver(true);
+          alert(`¡${active[0].name} ha ganado la partida!`);
+          return;
+        }
+        // Todos eliminados en la misma ronda: gana el de menor puntaje
+        const sorted = [...afterElimination].sort((a, b) => a.points - b.points);
+        setPlayers(afterElimination);
+        setGameOver(true);
+        alert(`¡${sorted[0].name} ha ganado la partida!`);
+        return;
+      }
+
+      setPlayers(afterElimination);
+      // Nueva ronda: repartir de nuevo
+      startNewRound(winnerIndex, afterElimination);
+    } else {
+      // Loba de Más: sumar combinaciones +5 por combinación para el que sale
+      const updated = players.map((player, index) => {
+        if (player.eliminated) return player;
+        let roundPoints = sumCombinationValue(player.combinations);
+        if (index === winnerIndex) {
+          roundPoints += player.combinations.length * 5;
+        }
+        return { ...player, points: player.points + roundPoints };
+      });
+
+      // Victoria: primero en llegar a 150
+      const reached = updated.find((p) => p.points >= 150);
+      if (reached) {
+        setPlayers(updated);
+        setGameOver(true);
+        alert(`¡${reached.name} ha ganado la partida!`);
+        return;
+      }
+
+      setPlayers(updated);
+      startNewRound(winnerIndex, updated);
+    }
+  };
+
+  const startNewRound = (winnerIndex, currentPlayers) => {
+    // Resetear manos y repartir
+    const tempDeck = generateDeck();
+    const newPlayers = currentPlayers.map((player) => {
+      if (player.eliminated) {
+        return { ...player, hand: [], combinations: [] };
+      }
+      return {
+        ...player,
+        hand: tempDeck.splice(0, 9),
+        combinations: [],
+      };
+    });
+
+    const firstDiscard = tempDeck.length > 0 ? tempDeck.splice(0, 1)[0] : null;
+
+    setPlayers(newPlayers);
+    setDeck(tempDeck);
+    if (firstDiscard) setDiscardPile([firstDiscard]);
+    else setDiscardPile([]);
+    setCurrentTurn(winnerIndex >= 0 ? winnerIndex : 0);
+    setSelectedCards([]);
+    setSelectedMeld(null);
+    setPendingJokers(0);
+    setJokerChoice(null);
+    setMoveChoice(null);
+    setCardDrawn(false);
   };
 
   if (!gameStarted) {
@@ -622,6 +735,22 @@ const GameTable = () => {
             </button>
           ))}
         </div>
+        <p>Modo de juego:</p>
+        <div className="game-mode-options">
+          <button
+            className={gameMode === "menos" ? "selected" : ""}
+            onClick={() => setGameMode("menos")}
+          >
+            Loba de Menos
+          </button>
+          <button
+            className={gameMode === "mas" ? "selected" : ""}
+            onClick={() => setGameMode("mas")}
+          >
+            Loba de Más
+          </button>
+        </div>
+
         <p>Modo de comodín:</p>
         <div className="joker-mode-options">
           <button
@@ -725,6 +854,15 @@ const GameTable = () => {
   )}
   <DiscardPile topCard={discardPile[discardPile.length - 1]} />
 </div>
+
+      <div className="scoreboard">
+        {players.map((p, i) => (
+          <span key={i} className={p.eliminated ? "eliminated" : ""}>
+            {p.name}: {p.points}
+            {p.eliminated ? " (eliminado)" : ""}
+          </span>
+        ))}
+      </div>
 
       {/* Renderizado de jugadores */}
       {players.map((player, index) => (
