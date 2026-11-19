@@ -23,10 +23,11 @@ const GameTable = () => {
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [playerCount, setPlayerCount] = useState(4);
-  const [allowLayoffAll, setAllowLayoffAll] = useState(false);
+  const [jokerMode, setJokerMode] = useState("mobile"); // "fixed" | "mobile"
   const [selectedMeld, setSelectedMeld] = useState(null); // { playerIndex, meldIndex }
   const [pendingJokers, setPendingJokers] = useState(0);
   const [jokerChoice, setJokerChoice] = useState(null); // { cards, options, context }
+  const [moveChoice, setMoveChoice] = useState(null); // { meldRef, naturalCard, jokerCard, leftRank, rightRank }
 
   const startGame = () => {
     const tempDeck = [...deck];
@@ -47,6 +48,8 @@ const GameTable = () => {
     setSelectedCards([]);
     setSelectedMeld(null);
     setPendingJokers(0);
+    setJokerChoice(null);
+    setMoveChoice(null);
     setCardDrawn(false);
     setGameOver(false);
     setGameStarted(true);
@@ -194,22 +197,34 @@ const GameTable = () => {
     const { playerIndex, meldIndex } = selectedMeld;
     setPlayers((prev) =>
       prev.map((player, pIndex) => {
-        if (pIndex !== playerIndex) return player;
-        const updatedCombinations = player.combinations.map((meld, mIndex) => {
-          if (mIndex !== meldIndex) return meld;
-          return makeMeld(cards, assignment);
-        });
-        // Quitar cartas de la mano solo si el meld es del jugador actual
-        if (playerIndex === currentTurn) {
+        // Actualizar combinaciones del dueño del meld
+        if (pIndex === playerIndex) {
+          const updatedCombinations = player.combinations.map((meld, mIndex) => {
+            if (mIndex !== meldIndex) return meld;
+            return makeMeld(cards, assignment);
+          });
+          // Si el dueño es el jugador actual, quitar cartas de su mano
+          if (playerIndex === currentTurn) {
+            return {
+              ...player,
+              hand: player.hand.filter(
+                (card) => !selectedCards.some((selected) => selected.id === card.id)
+              ),
+              combinations: updatedCombinations,
+            };
+          }
+          return { ...player, combinations: updatedCombinations };
+        }
+        // Si el dueño no es el actual pero el jugador actual aportó cartas, quitarlas de su mano
+        if (pIndex === currentTurn && playerIndex !== currentTurn) {
           return {
             ...player,
             hand: player.hand.filter(
               (card) => !selectedCards.some((selected) => selected.id === card.id)
             ),
-            combinations: updatedCombinations,
           };
         }
-        return { ...player, combinations: updatedCombinations };
+        return player;
       })
     );
     setSelectedCards([]);
@@ -227,10 +242,7 @@ const GameTable = () => {
     }
 
     const { playerIndex, meldIndex } = selectedMeld;
-    if (playerIndex !== currentTurn && !allowLayoffAll) {
-      alert("No puedes agregar cartas a combinaciones de otros jugadores.");
-      return;
-    }
+    // Siempre se permite pegar a combinaciones de cualquier jugador
 
     const meld = players[playerIndex].combinations[meldIndex];
     const newCards = [...meld.cards, ...selectedCards];
@@ -290,6 +302,10 @@ const GameTable = () => {
   };
 
   const handleSubstituteJoker = () => {
+    if (jokerMode === "fixed") {
+      alert("La sustitución de comodín no está disponible en modo fijo.");
+      return;
+    }
     if (!selectedMeld) {
       alert("Selecciona una combinación con comodín.");
       return;
@@ -403,6 +419,137 @@ const GameTable = () => {
     }
   };
 
+  const finalizeMoveJoker = (meldRef, naturalCard, jokerCard, chosenRank) => {
+    const { playerIndex, meldIndex } = meldRef;
+    setPlayers((prev) =>
+      prev.map((player, pIndex) => {
+        if (pIndex !== playerIndex) {
+          // Quitar la carta natural de la mano del jugador actual si no es el dueño
+          if (pIndex === currentTurn && playerIndex !== currentTurn) {
+            return {
+              ...player,
+              hand: player.hand.filter((c) => c.id !== naturalCard.id),
+            };
+          }
+          return player;
+        }
+
+        const meld = player.combinations[meldIndex];
+        const jokerIndex = meld.cards.findIndex((c) => c.id === jokerCard.id);
+        const newCards = meld.cards.map((c, i) =>
+          i === jokerIndex ? naturalCard : c
+        );
+        newCards.push(jokerCard);
+
+        const newAssignment = { ...(meld.jokerAssignments || {}) };
+        newAssignment[jokerCard.id] = chosenRank;
+
+        if (!isValidCombination(newCards, newAssignment)) {
+          alert("El movimiento del comodín no es válido.");
+          return player;
+        }
+
+        const updatedCombinations = player.combinations.map((m, mi) => {
+          if (mi !== meldIndex) return m;
+          return makeMeld(newCards, newAssignment);
+        });
+
+        const newHand = player.hand.filter((c) => c.id !== naturalCard.id);
+        return { ...player, hand: newHand, combinations: updatedCombinations };
+      })
+    );
+    setSelectedCards([]);
+    setSelectedMeld(null);
+    setMoveChoice(null);
+  };
+
+  const handleReplaceAndMoveJoker = () => {
+    if (jokerMode === "fixed") {
+      alert("El movimiento de comodín no está disponible en modo fijo.");
+      return;
+    }
+    if (!selectedMeld) {
+      alert("Selecciona una combinación con comodín.");
+      return;
+    }
+    if (selectedCards.length !== 1) {
+      alert("Selecciona exactamente una carta natural para reemplazar el comodín.");
+      return;
+    }
+
+    const { playerIndex, meldIndex } = selectedMeld;
+    if (playerIndex !== currentTurn) {
+      alert("Solo puedes mover comodines en tu turno.");
+      return;
+    }
+
+    const meld = players[playerIndex].combinations[meldIndex];
+    const natural = selectedCards[0];
+
+    const jokerIndex = meld.cards.findIndex(
+      (c) =>
+        c.rank === "JOKER" &&
+        (meld.jokerAssignments || {})[c.id] === natural.rank
+    );
+
+    if (jokerIndex === -1) {
+      alert("No hay un comodín representando esa carta.");
+      return;
+    }
+
+    const jokerCard = meld.cards[jokerIndex];
+    const assignedIdx = RANKS.indexOf(natural.rank);
+
+    const occupied = new Set();
+    meld.cards.forEach((c, i) => {
+      if (i === jokerIndex) return;
+      if (c.rank === "JOKER") {
+        occupied.add((meld.jokerAssignments || {})[c.id]);
+      } else {
+        occupied.add(c.rank);
+      }
+    });
+
+    const leftIdx = assignedIdx - 1;
+    const rightIdx = assignedIdx + 1;
+    const leftRank = leftIdx >= 0 ? RANKS[leftIdx] : null;
+    const rightRank = rightIdx < RANKS.length ? RANKS[rightIdx] : null;
+
+    const leftAvailable = !!leftRank && !occupied.has(leftRank);
+    const rightAvailable = !!rightRank && !occupied.has(rightRank);
+
+    if (!leftAvailable && !rightAvailable) {
+      alert("No hay hueco adyacente para mover el comodín.");
+      return;
+    }
+
+    if (leftAvailable && !rightAvailable) {
+      finalizeMoveJoker(selectedMeld, natural, jokerCard, leftRank);
+    } else if (!leftAvailable && rightAvailable) {
+      finalizeMoveJoker(selectedMeld, natural, jokerCard, rightRank);
+    } else {
+      setMoveChoice({
+        meldRef: selectedMeld,
+        naturalCard: natural,
+        jokerCard,
+        leftRank,
+        rightRank,
+      });
+    }
+  };
+
+  const finalizeMoveChoice = (direction) => {
+    if (!moveChoice) return;
+    const chosenRank =
+      direction === "left" ? moveChoice.leftRank : moveChoice.rightRank;
+    finalizeMoveJoker(
+      moveChoice.meldRef,
+      moveChoice.naturalCard,
+      moveChoice.jokerCard,
+      chosenRank
+    );
+  };
+
   const finalizeJokerChoice = (assignment) => {
     if (!jokerChoice) return;
     const { context } = jokerChoice;
@@ -475,15 +622,45 @@ const GameTable = () => {
             </button>
           ))}
         </div>
-        <label>
-          <input
-            type="checkbox"
-            checked={allowLayoffAll}
-            onChange={(e) => setAllowLayoffAll(e.target.checked)}
-          />
-          Permitir pegar cartas a combinaciones de otros
-        </label>
+        <p>Modo de comodín:</p>
+        <div className="joker-mode-options">
+          <button
+            className={jokerMode === "fixed" ? "selected" : ""}
+            onClick={() => setJokerMode("fixed")}
+          >
+            Fijo
+          </button>
+          <button
+            className={jokerMode === "mobile" ? "selected" : ""}
+            onClick={() => setJokerMode("mobile")}
+          >
+            Móvil
+          </button>
+        </div>
         <button onClick={startGame}>Iniciar partida</button>
+      </div>
+    );
+  }
+
+  if (moveChoice) {
+    return (
+      <div className="game-table">
+        <h2>Mover comodín</h2>
+        <p>Elige hacia dónde mover el comodín:</p>
+        <button onClick={() => finalizeMoveChoice("left")}>
+          Izquierda ({moveChoice.leftRank})
+        </button>
+        <button onClick={() => finalizeMoveChoice("right")}>
+          Derecha ({moveChoice.rightRank})
+        </button>
+        <button
+          onClick={() => {
+            setMoveChoice(null);
+            setSelectedCards([]);
+          }}
+        >
+          Cancelar
+        </button>
       </div>
     );
   }
@@ -533,7 +710,14 @@ const GameTable = () => {
         <>
           <button onClick={handleDropCombination}>Bajar combinación</button>
           <button onClick={handleLayoff}>Agregar a combinación</button>
-          <button onClick={handleSubstituteJoker}>Sustituir comodín</button>
+          {jokerMode === "mobile" && (
+            <>
+              <button onClick={handleSubstituteJoker}>Sustituir comodín</button>
+              <button onClick={handleReplaceAndMoveJoker}>
+                Reemplazar y mover comodín
+              </button>
+            </>
+          )}
           <button onClick={handleDiscard}>Descartar</button>
         </>
       )}
