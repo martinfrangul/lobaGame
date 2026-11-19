@@ -4,6 +4,7 @@ import Card from "./Card";
 import DiscardPile from "./DiscardPile";
 import { useGameContext } from "../context/gameState";
 import { isValidCombination } from "../utils/gameUtils";
+import { shuffleDeck } from "../utils/deck";
 
 const GameTable = () => {
   const {
@@ -21,7 +22,7 @@ const GameTable = () => {
   const [cardDrawn, setCardDrawn] = useState(false);
   const [gameOver, setGameOver] = useState(false);
 
-  // Reparte 9 cartas a todos los jugadores al inicio
+  // Reparte 9 cartas a todos los jugadores al inicio y voltea 1 carta para el descarte
   useEffect(() => {
     const tempDeck = [...deck];
     const newPlayers = players.map((player) => ({
@@ -29,8 +30,14 @@ const GameTable = () => {
       hand: tempDeck.splice(0, 9), // Tomar 9 cartas para cada jugador
       combinations: [], // Inicializamos las combinaciones como array vacío
     }));
+    // Carta inicial del pozo de descarte
+    const firstDiscard = tempDeck.length > 0 ? tempDeck.splice(0, 1)[0] : null;
+
     setPlayers(newPlayers);
-    setDeck(tempDeck); // Actualizar el mazo restante
+    setDeck(tempDeck);
+    if (firstDiscard) {
+      setDiscardPile([firstDiscard]);
+    }
   }, []);
   
 
@@ -80,22 +87,20 @@ const GameTable = () => {
   
     if (isValidCombination(selectedCards)) {
       const orderedCombination = orderCards(selectedCards); // Ordenamos las cartas
-  
-      const updatedPlayers = players.map((player, index) => {
-        if (index === currentTurn) {
+
+      setPlayers((prev) =>
+        prev.map((player, index) => {
+          if (index !== currentTurn) return player;
           return {
             ...player,
             hand: player.hand.filter(
               (card) =>
                 !selectedCards.some((selected) => selected.id === card.id)
             ),
-            combinations: [...player.combinations, orderedCombination], // Guardar la combinación ordenada
+            combinations: [...player.combinations, orderedCombination],
           };
-        }
-        return player;
-      });
-  
-      setPlayers(updatedPlayers);
+        })
+      );
       setSelectedCards([]);
     } else {
       alert("Combinación inválida");
@@ -110,26 +115,59 @@ const GameTable = () => {
       return;
     }
 
-    let card;
     if (source === "deck") {
-      if (deck.length === 0) {
+      let workingDeck = [...deck];
+      let workingDiscard = [...discardPile];
+
+      // Reciclar el pozo si el mazo se agotó (se deja la carta superior)
+      if (workingDeck.length === 0) {
+        if (workingDiscard.length <= 1) {
+          alert("El mazo está vacío.");
+          return;
+        }
+        const topCard = workingDiscard[workingDiscard.length - 1];
+        const toShuffle = workingDiscard.slice(0, -1);
+        workingDeck = shuffleDeck(toShuffle);
+        workingDiscard = [topCard];
+      }
+
+      if (workingDeck.length === 0) {
         alert("El mazo está vacío.");
         return;
       }
-      card = deck.pop();
-      setDeck([...deck]);
-    } else if (source === "discardPile") {
+
+      const card = workingDeck[workingDeck.length - 1];
+      const restDeck = workingDeck.slice(0, -1);
+
+      setDeck(restDeck);
+      setDiscardPile(workingDiscard);
+      setPlayers((prev) =>
+        prev.map((player, index) =>
+          index === currentTurn
+            ? { ...player, hand: [...player.hand, card] }
+            : player
+        )
+      );
+      setCardDrawn(true);
+      return;
+    }
+
+    if (source === "discardPile") {
       if (discardPile.length === 0) {
         alert("El pozo está vacío.");
         return;
       }
-      card = discardPile.pop();
-      setDiscardPile([...discardPile]);
-    }
+      const card = discardPile[discardPile.length - 1];
+      const restDiscard = discardPile.slice(0, -1);
 
-    if (card) {
-      players[currentTurn].hand.push(card);
-      setPlayers([...players]);
+      setDiscardPile(restDiscard);
+      setPlayers((prev) =>
+        prev.map((player, index) =>
+          index === currentTurn
+            ? { ...player, hand: [...player.hand, card] }
+            : player
+        )
+      );
       setCardDrawn(true);
     }
   };
@@ -146,18 +184,21 @@ const GameTable = () => {
     }
 
     const cardToDiscard = selectedCards[0];
-    setDiscardPile([...discardPile, cardToDiscard]);
-
-    const newHand = players[currentTurn].hand.filter(
+    const currentPlayer = players[currentTurn];
+    const newHand = currentPlayer.hand.filter(
       (card) => card.id !== cardToDiscard.id
     );
 
-    players[currentTurn].hand = newHand;
-    setPlayers([...players]);
+    setDiscardPile((prev) => [...prev, cardToDiscard]);
+    setPlayers((prev) =>
+      prev.map((player, index) =>
+        index === currentTurn ? { ...player, hand: newHand } : player
+      )
+    );
 
     if (newHand.length === 0) {
       setGameOver(true);
-      alert(`¡${players[currentTurn].name} ha ganado!`);
+      alert(`¡${currentPlayer.name} ha ganado!`);
       return;
     }
 

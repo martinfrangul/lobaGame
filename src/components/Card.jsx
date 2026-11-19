@@ -1,4 +1,6 @@
 const Card = ({ rank, suit, onClick, isSelected }) => {
+  const isJoker = rank === "JOKER";
+
   const suitSymbols = {
     hearts: "♥",
     diamonds: "♦",
@@ -13,20 +15,20 @@ const Card = ({ rank, suit, onClick, isSelected }) => {
     spades: "black",
   };
 
-  console.log("Rendering card:", { rank, suit }); // Verifica los valores de rank y sui
+  const color = isJoker ? "purple" : suitColors[suit];
 
   return (
     <div
       className={`card ${isSelected ? "selected" : ""}`}
       onClick={onClick}
       style={{
-        borderColor: suitColors[suit],
-        color: suitColors[suit],
+        borderColor: color,
+        color: color,
         cursor: onClick ? "pointer" : "default",
       }}
     >
-      <div className="rank">{rank}</div>
-      <div className="suit">{suitSymbols[suit]}</div>
+      <div className="rank">{isJoker ? "★" : rank}</div>
+      <div className="suit">{isJoker ? "JOKER" : suitSymbols[suit]}</div>
     </div>
   );
 };

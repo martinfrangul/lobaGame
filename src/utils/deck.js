@@ -21,13 +21,19 @@ export const generateDeck = () => {
     ...singleDeck.map((card) => ({ ...card, id: id++ })),
   ];
 
+  // 4 comodines (jokers), como exige el reglamento (108 cartas en total)
+  for (let i = 0; i < 4; i++) {
+    doubleDeck.push({ id: id++, rank: "JOKER", suit: null });
+  }
+
   return shuffleDeck(doubleDeck);
 };
 
-const shuffleDeck = (deck) => {
-  for (let i = deck.length - 1; i > 0; i--) {
+export const shuffleDeck = (deck) => {
+  const shuffled = [...deck];
+  for (let i = shuffled.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [deck[i], deck[j]] = [deck[j], deck[i]];
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
-  return deck;
+  return shuffled;
 };
