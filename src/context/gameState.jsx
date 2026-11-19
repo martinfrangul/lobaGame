@@ -6,12 +6,7 @@ const GameContext = createContext();
 export const GameProvider = ({ children }) => {
   const [deck, setDeck] = useState(generateDeck());
   const [discardPile, setDiscardPile] = useState([]);
-  const [players, setPlayers] = useState([
-    { name: "Player 1", hand: [], points: 0 },
-    { name: "Player 2", hand: [], points: 0 },
-    { name: "Player 3", hand: [], points: 0 },
-    { name: "Player 4", hand: [], points: 0 },
-  ]);
+  const [players, setPlayers] = useState([]);
   const [currentTurn, setCurrentTurn] = useState(0);
   const [combinationBoard, setCombinationBoard] = useState([]);
 

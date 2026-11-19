@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import PlayerHand from "./PlayerHand";
 import Card from "./Card";
 import DiscardPile from "./DiscardPile";
@@ -21,16 +21,17 @@ const GameTable = () => {
   const [selectedCards, setSelectedCards] = useState([]);
   const [cardDrawn, setCardDrawn] = useState(false);
   const [gameOver, setGameOver] = useState(false);
+  const [gameStarted, setGameStarted] = useState(false);
+  const [playerCount, setPlayerCount] = useState(4);
 
-  // Reparte 9 cartas a todos los jugadores al inicio y voltea 1 carta para el descarte
-  useEffect(() => {
+  const startGame = () => {
     const tempDeck = [...deck];
-    const newPlayers = players.map((player) => ({
-      ...player,
-      hand: tempDeck.splice(0, 9), // Tomar 9 cartas para cada jugador
-      combinations: [], // Inicializamos las combinaciones como array vacío
+    const newPlayers = Array.from({ length: playerCount }, (_, index) => ({
+      name: `Jugador ${index + 1}`,
+      hand: tempDeck.splice(0, 9),
+      points: 0,
+      combinations: [],
     }));
-    // Carta inicial del pozo de descarte
     const firstDiscard = tempDeck.length > 0 ? tempDeck.splice(0, 1)[0] : null;
 
     setPlayers(newPlayers);
@@ -38,7 +39,12 @@ const GameTable = () => {
     if (firstDiscard) {
       setDiscardPile([firstDiscard]);
     }
-  }, []);
+    setCurrentTurn(0);
+    setSelectedCards([]);
+    setCardDrawn(false);
+    setGameOver(false);
+    setGameStarted(true);
+  };
   
 
   const handleCardSelect = (card) => {
@@ -206,6 +212,27 @@ const GameTable = () => {
     setSelectedCards([]);
     setCurrentTurn((currentTurn + 1) % players.length);
   };
+
+  if (!gameStarted) {
+    return (
+      <div className="game-table setup-screen">
+        <h1>Loba</h1>
+        <p>¿Cuántos jugadores?</p>
+        <div className="player-count-options">
+          {[2, 3, 4].map((count) => (
+            <button
+              key={count}
+              className={playerCount === count ? "selected" : ""}
+              onClick={() => setPlayerCount(count)}
+            >
+              {count} jugadores
+            </button>
+          ))}
+        </div>
+        <button onClick={startGame}>Iniciar partida</button>
+      </div>
+    );
+  }
 
   return (
     <div className="game-table">
