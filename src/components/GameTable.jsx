@@ -1059,7 +1059,7 @@ const GameTable = () => {
 
       <div className="center-area">
         {!gameOver && (
-          <>
+          <div className="actions">
             <button className="icon-btn" onClick={() => handleDrawCard("deck")} disabled={cardDrawn} title="Robar del mazo">🂠</button>
             <button className="icon-btn" onClick={() => handleDrawCard("discardPile")} disabled={cardDrawn || discardPile.length === 0} title="Robar del pozo">📥</button>
             {currentTurn !== null && (
@@ -1076,7 +1076,7 @@ const GameTable = () => {
                 <button className="icon-btn" onClick={handleDiscard} title="Descartar">🗑️</button>
               </>
             )}
-          </>
+          </div>
         )}
         <div className="deck-row">
           <span className="deck-label">Mazo</span>
