@@ -75,7 +75,7 @@ const GameTable = () => {
     );
   };
   
-  const orderCards = (cards) => {
+  const orderCards = (cards, assignment = {}) => {
     const rankOrder = {
       A: 1,
       2: 2,
@@ -92,14 +92,18 @@ const GameTable = () => {
       K: 13,
     };
 
-    return [...cards].sort((a, b) => {
-      // Los comodines se mantienen al final al ordenar
-      if (a.rank === "JOKER" && b.rank !== "JOKER") return 1;
-      if (b.rank === "JOKER" && a.rank !== "JOKER") return -1;
-      const rankA = rankOrder[a.rank] ?? 99;
-      const rankB = rankOrder[b.rank] ?? 99;
-      return rankA - rankB;
-    });
+    const rankOf = (card) => {
+      if (card.rank === "JOKER") {
+        const assigned = assignment[card.id];
+        if (assigned && rankOrder[assigned]) {
+          return rankOrder[assigned];
+        }
+        return 99; // sin asignación fija, va al final
+      }
+      return rankOrder[card.rank] ?? 99;
+    };
+
+    return [...cards].sort((a, b) => rankOf(a) - rankOf(b));
   };
   
   const handleMeldClick = (playerIndex, meldIndex) => {
@@ -116,7 +120,7 @@ const GameTable = () => {
 
   const makeMeld = (cards, assignment = {}) => ({
     id: `${Date.now()}-${Math.random()}`,
-    cards: orderCards(cards),
+    cards: orderCards(cards, assignment),
     jokerAssignments: assignment || {},
   });
 
