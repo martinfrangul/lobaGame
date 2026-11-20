@@ -907,10 +907,14 @@ const GameTable = () => {
           </h3>
           <PlayerHand
             cards={players[1].hand}
-            selectedCards={[]}
-            onCardSelect={undefined}
-            isFaceDown={true}
-            soparableIds={[]}
+            selectedCards={currentTurn === 1 ? selectedCards : []}
+            onCardSelect={currentTurn === 1 ? handleCardSelect : undefined}
+            isFaceDown={currentTurn !== 1}
+            soparableIds={
+              currentTurn === 1
+                ? (players[1]?.hand || []).filter(isSoparable).map((c) => c.id)
+                : []
+            }
           />
         </section>
 
@@ -955,12 +959,14 @@ const GameTable = () => {
         <section className="player-area-bottom">
           <PlayerHand
             cards={players[0].hand}
-            selectedCards={selectedCards}
-            onCardSelect={handleCardSelect}
-            isFaceDown={false}
-            soparableIds={players[0].hand
-              .filter(isSoparable)
-              .map((c) => c.id)}
+            selectedCards={currentTurn === 0 ? selectedCards : []}
+            onCardSelect={currentTurn === 0 ? handleCardSelect : undefined}
+            isFaceDown={currentTurn !== 0}
+            soparableIds={
+              currentTurn === 0
+                ? (players[0]?.hand || []).filter(isSoparable).map((c) => c.id)
+                : []
+            }
           />
 
           <div className="actions">
