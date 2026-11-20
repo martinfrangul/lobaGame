@@ -67,13 +67,27 @@ body {
 .combination {
   display: flex;
   flex-wrap: wrap; /* Evita que las cartas se monten si hay muchas */
-  gap: 5px;
-  margin: 5px 0;
-  padding: 5px;
+  gap: 4px;
+  margin: 3px;
+  padding: 3px;
   background-color: #f9f9f9;
   border-radius: 5px;
-  border: 1px solid #ccc;
+  border: 2px solid #ccc;
 }
+
+.combination.player-0 { border-color: #3498db; }
+.combination.player-1 { border-color: #2ecc71; }
+.combination.player-2 { border-color: #e67e22; }
+.combination.player-3 { border-color: #e74c3c; }
+
+.combination .card {
+  width: 40px;
+  height: 56px;
+  font-size: 12px;
+}
+
+.combination .card .rank { font-size: 14px; }
+.combination .card .suit { font-size: 12px; }
 
 
 /* Pozo de descartes */
@@ -275,17 +289,23 @@ button:hover:not(:disabled) {
 
 .layout-2p .table-combinations {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
   gap: 6px;
   width: 100%;
   align-items: center;
+  justify-content: center;
+  max-height: 90px;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .layout-2p .player-combinations {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   gap: 4px;
+  flex-wrap: wrap;
 }
 
 .layout-2p .combo-owner {
@@ -387,17 +407,23 @@ button:hover:not(:disabled) {
 
 .layout-3-4 .table-combinations {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
   gap: 6px;
   align-items: center;
-  max-width: 60vw;
+  justify-content: center;
+  max-width: 70vw;
+  max-height: 90px;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .layout-3-4 .player-combinations {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   gap: 4px;
+  flex-wrap: wrap;
 }
 
 .layout-3-4 .combo-owner {

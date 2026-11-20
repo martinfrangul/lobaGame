@@ -926,7 +926,6 @@ const GameTable = () => {
           <div className="table-combinations">
             {players.map((player, pIndex) => (
               <div key={pIndex} className="player-combinations">
-                <span className="combo-owner">{player.name}</span>
                 {(player.combinations || []).map((meld, meldIndex) => {
                   const isSelectedMeld =
                     selectedMeld &&
@@ -935,7 +934,7 @@ const GameTable = () => {
                   return (
                     <div
                       key={meld.id || meldIndex}
-                      className={`combination ${isSelectedMeld ? "selected-meld" : ""}`}
+                      className={`combination player-${pIndex} ${isSelectedMeld ? "selected-meld" : ""}`}
                       onClick={() => handleMeldClick(pIndex, meldIndex)}
                     >
                       {meld.cards.map((card) => (
@@ -1086,7 +1085,6 @@ const GameTable = () => {
         <div className="table-combinations">
           {players.map((player, pIndex) => (
             <div key={pIndex} className="player-combinations">
-              <span className="combo-owner">{player.name}</span>
               {(player.combinations || []).map((meld, meldIndex) => {
                 const isSelectedMeld =
                   selectedMeld &&
@@ -1095,7 +1093,7 @@ const GameTable = () => {
                 return (
                   <div
                     key={meld.id || meldIndex}
-                    className={`combination ${isSelectedMeld ? "selected-meld" : ""}`}
+                    className={`combination player-${pIndex} ${isSelectedMeld ? "selected-meld" : ""}`}
                     onClick={() => handleMeldClick(pIndex, meldIndex)}
                   >
                     {meld.cards.map((card) => (
