@@ -170,6 +170,51 @@ button.selected {
   font-weight: bold;
 }
 
+/* Badges de rivales en la mesa */
+.opponent-badge {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  z-index: 2;
+  font-size: 12px;
+}
+
+.opponent-badge .opp-deck {
+  font-size: 16px;
+}
+
+.opponent-badge .opp-count {
+  font-weight: 700;
+}
+
+.opponent-badge.active {
+  box-shadow: 0 0 0 2px rgba(74, 163, 255, 0.6);
+}
+
+.opponent-badge.pos-top {
+  top: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.opponent-badge.pos-right {
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.opponent-badge.pos-left {
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 /* Drag & drop de cartas */
 .draggable-card {
   display: inline-block;

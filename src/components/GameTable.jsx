@@ -976,14 +976,6 @@ const GameTable = () => {
 
       <header className="top-bar">
         <span className="turn-indicator">Turno: {players[currentTurn]?.name}</span>
-        <span className="scoreboard">
-          {players.map((p, i) => (
-            <span key={i} className={`${p.eliminated ? "eliminated" : ""} ${i === currentTurn ? "active-player" : ""}`}>
-              {p.name}: {p.points} ({p.hand.length})
-              {p.eliminated ? " (eliminado)" : ""}
-            </span>
-          ))}
-        </span>
         <button className="icon-btn" onClick={() => setShowLegend(true)} title="Leyenda">❓</button>
       </header>
 
@@ -1025,6 +1017,22 @@ const GameTable = () => {
           ))}
         </div>
       </div>
+
+      {/* Rivales en sus posiciones */}
+      {players.map((p, i) => {
+        if (i === 0) return null;
+        let posClass = "pos-right";
+        if (players.length === 2) posClass = "pos-top";
+        else if (i === 2) posClass = "pos-top";
+        else if (i === 3) posClass = "pos-left";
+        return (
+          <div key={i} className={`opponent-badge ${posClass} ${i === currentTurn ? "active" : ""}`}>
+            <span className="opp-deck">🂠</span>
+            <span className="opp-count">{p.hand.length}</span>
+            <span className="opp-name">{p.name}</span>
+          </div>
+        );
+      })}
 
       {/* Zona inferior: mano del jugador activo */}
       <section className="bottom-area current-turn">
