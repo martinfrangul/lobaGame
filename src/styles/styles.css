@@ -23,7 +23,10 @@
 /* Estilos básicos */
 body {
   font-family: "Inter", "Segoe UI", Arial, sans-serif;
-  background: radial-gradient(circle at top, var(--bg-table), var(--bg-table-2));
+  background:
+    radial-gradient(circle at 20% 20%, rgba(74, 163, 255, 0.25), transparent 45%),
+    radial-gradient(circle at 80% 10%, rgba(125, 211, 252, 0.2), transparent 40%),
+    linear-gradient(160deg, #0f2438, #1b3a5b 45%, #0e1f33);
   color: var(--text);
   margin: 0;
   padding: 0;
@@ -300,6 +303,19 @@ button:focus-visible {
   justify-content: center;
   align-items: center;
   overflow: hidden;
+  background: radial-gradient(circle at center, rgba(255,255,255,0.06), transparent 60%);
+}
+
+/* Paneles glass */
+.top-bar,
+.center-area,
+.player-area,
+.hand-wrapper {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
 }
 
 .center-area {
@@ -364,15 +380,16 @@ button:focus-visible {
 
 /* Botones */
 button {
-  background: var(--panel-2);
+  background: rgba(255, 255, 255, 0.08);
   color: var(--text);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: var(--radius);
   padding: 8px 12px;
   margin: var(--space-1);
   cursor: pointer;
-  transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(6px);
 }
 
 button:hover:not(:disabled) {
