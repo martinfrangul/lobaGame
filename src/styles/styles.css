@@ -124,10 +124,13 @@ button.selected {
 .draggable-card {
   display: inline-block;
   transition: transform 0.1s;
+  cursor: grab;
+  will-change: transform;
 }
 
 .draggable-card.dragging {
   opacity: 0.4;
+  pointer-events: none;
 }
 
 .drag-placeholder {
@@ -138,13 +141,22 @@ button.selected {
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.1);
   flex: 0 0 auto;
+  pointer-events: none;
+}
+
+/* Barra de ordenamiento por mano */
+.hand-toolbar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 4px;
+  justify-content: center;
 }
 
 
 /* Pozo de descartes */
 .discard-pile {
   border: 2px dashed gray;
-  padding: 6px;
+  padding: 18px;
   margin: 4px;
   width: 62px;
   height: 82px;

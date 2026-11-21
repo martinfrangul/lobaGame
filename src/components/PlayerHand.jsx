@@ -15,21 +15,36 @@ const PlayerHand = ({
   onDragEnd,
   dragIndex,
   dragOverIndex,
+  onSort,
 }) => {
   return (
-    <div
-      className="player-hand"
-      onDragOver={(e) => {
-        if (!draggable) return;
-        e.preventDefault();
-        if (onDragOver) onDragOver(e, cards.length);
-      }}
-      onDrop={(e) => {
-        if (!draggable) return;
-        e.preventDefault();
-        if (onDrop) onDrop(null);
-      }}
-    >
+    <div className="hand-wrapper">
+      {draggable && onSort && (
+        <div className="hand-toolbar">
+          <button className="icon-btn" onClick={() => onSort("suit")} title="Ordenar por palo">
+            ♠️
+          </button>
+          <button className="icon-btn" onClick={() => onSort("rank")} title="Ordenar por número">
+            🔢
+          </button>
+          <button className="icon-btn" onClick={() => onSort("random")} title="Ordenar aleatorio">
+            🎲
+          </button>
+        </div>
+      )}
+      <div
+        className="player-hand"
+        onDragOver={(e) => {
+          if (!draggable) return;
+          e.preventDefault();
+          if (onDragOver) onDragOver(e, cards.length);
+        }}
+        onDrop={(e) => {
+          if (!draggable) return;
+          e.preventDefault();
+          if (onDrop) onDrop(null);
+        }}
+      >
       {cards.map((card, index) => {
         const isSelected = (selectedCards || []).some((selected) => selected.id === card.id);
         const isSoparable = (soparableIds || []).includes(card.id);
@@ -75,6 +90,7 @@ const PlayerHand = ({
       {draggable &&
         dragIndex !== null &&
         dragOverIndex === cards.length && <div className="drag-placeholder" />}
+    </div>
     </div>
   );
 };

@@ -996,6 +996,7 @@ const GameTable = () => {
               isFaceDown={false}
               soparableIds={(players[1]?.hand || []).filter(isSoparable).map((c) => c.id)}
               lastDrawnCardId={lastDrawnCardId}
+              onSort={sortHand}
               draggable={true}
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}
@@ -1056,6 +1057,7 @@ const GameTable = () => {
               isFaceDown={false}
               soparableIds={(players[0]?.hand || []).filter(isSoparable).map((c) => c.id)}
               lastDrawnCardId={lastDrawnCardId}
+              onSort={sortHand}
               draggable={true}
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}
@@ -1098,27 +1100,7 @@ const GameTable = () => {
             >
               💨
             </button>
-            <button
-              className="icon-btn"
-              onClick={() => sortHand("suit")}
-              title="Ordenar por palo"
-            >
-              ♠️
-            </button>
-            <button
-              className="icon-btn"
-              onClick={() => sortHand("rank")}
-              title="Ordenar por número"
-            >
-              🔢
-            </button>
-            <button
-              className="icon-btn"
-              onClick={() => sortHand("random")}
-              title="Ordenar aleatorio"
-            >
-              🎲
-            </button>
+
             {jokerMode === "mobile" && (
               <>
                 <button
@@ -1196,9 +1178,6 @@ const GameTable = () => {
                 <button className="icon-btn" onClick={handleDropCombination} title="Bajar combinación">➕</button>
                 <button className="icon-btn" onClick={handleLayoff} disabled={!selectedMeld} title="Agregar a combinación">📎</button>
                 <button className="icon-btn" onClick={handleSopar} title="Sopar seleccionadas">💨</button>
-              <button className="icon-btn" onClick={() => sortHand("suit")} title="Ordenar por palo">♠️</button>
-              <button className="icon-btn" onClick={() => sortHand("rank")} title="Ordenar por número">🔢</button>
-              <button className="icon-btn" onClick={() => sortHand("random")} title="Ordenar aleatorio">🎲</button>
 
                 {jokerMode === "mobile" && (
                   <>
@@ -1263,6 +1242,7 @@ const GameTable = () => {
               isFaceDown={false}
               soparableIds={(players[index]?.hand || []).filter(isSoparable).map((c) => c.id)}
               lastDrawnCardId={lastDrawnCardId}
+              onSort={sortHand}
               draggable={true}
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}
