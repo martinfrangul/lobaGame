@@ -645,6 +645,7 @@ const GameTable = () => {
   };
 
   const sortHand = (mode) => {
+    setLastDrawnCardId(null);
     setPlayers((prev) =>
       prev.map((player, index) => {
         if (index !== currentTurn) return player;
@@ -714,6 +715,7 @@ const GameTable = () => {
   const handleDragEnd = () => {
     setDragIndex(null);
     setDragOverIndex(null);
+    setLastDrawnCardId(null);
   };
 
   const handleDiscard = () => {
