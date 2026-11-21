@@ -1,0 +1,60 @@
+PLAN: Loba Online (Web, 2-4 jugadores)
+
+Objetivo
+Permitir que 2-4 amigos jueguen Loba online en el navegador, con lobby, salas y sincronizacion en tiempo real. No se busca escala masiva, solo partidas entre amigos.
+
+Stack recomendado
+NO usar Next.js para el tiempo real: Next no maneja WebSockets de forma sencilla (especialmente en serverless). Para un proyecto entre amigos, lo mas simple y robusto es:
+
+- Cliente: React + Vite (ya existente).
+- Servidor: Node.js + Express + Socket.io (autoritativo).
+- Logica compartida: paquete shared/ con mazo, validacion y puntuacion, usado por cliente y servidor.
+- Despliegue: un solo servicio Node que sirve el build del cliente y maneja Socket.io (Render, Railway o un VPS). Para amigos, una sola instancia es suficiente.
+
+Alternativa sin servidor propio: usar un BaaS (Supabase/Firebase Realtime), pero la logica autoritativa del juego sigue necesitando un servidor o funciones edge. El stack Node + Socket.io es el mas directo y controlable.
+
+Arquitectura
+- client/: app React actual.
+- server/: Node + Express + Socket.io.
+- shared/: logica pura de juego (mazo, validacion, rondas, puntuacion).
+
+El servidor es la unica fuente de verdad. Valida cada accion y envia:
+- Estado publico: mesa, combinaciones, puntos, turno, descarte.
+- Estado privado: solo la mano del jugador correspondiente.
+
+Plan por ramas (orden recomendado)
+
+1. feat/online-shared-logic
+- Extraer deck.js, gameUtils.js y la logica de rondas/puntuacion a shared/.
+- Hacerla pura (sin React) y anadir tests unitarios.
+- Reutilizar en cliente y servidor.
+
+2. feat/online-server
+- Servidor Node con Socket.io.
+- Gestion de salas: crear, unirse, salir, configuracion (jugadores, modo de juego, modo de comodin).
+- Estado autoritativo y validacion de acciones.
+- Emision de state:public + state:private por jugador.
+
+3. feat/online-client-socket
+- Conectar el cliente al servidor.
+- Reemplazar el estado local por estado recibido.
+- Renderizar mano propia desde state:private; rivales como contadores.
+- Mantener la UI actual (iconos, layout, drag visual).
+
+4. feat/online-lobby-ui
+- Pantalla de lobby: crear/unirse a sala, lista de jugadores, listo, iniciar.
+- Manejo de desconexiones y reconexion (token de sesion).
+
+5. feat/online-deploy
+- Configuracion de hosting, variables de entorno, CORS.
+- Build del cliente servido por el mismo Node.
+
+Consideraciones
+- Privacidad: nunca enviar la mano de un jugador a otro.
+- Reconexión: permitir volver a la sala con la mano intacta.
+- Seguridad: validar cada accion en servidor (turno, carta en mano, combinacion valida).
+- Escalabilidad: una instancia es suficiente para amigos; si crece, usar Redis adapter.
+
+Notas
+- Prioridad: primero shared-logic, luego servidor, luego cliente.
+- Escala objetivo: miles de usuarios concurrentes como maximo. Para eso, una instancia con Redis adapter y Postgres es suficiente.
