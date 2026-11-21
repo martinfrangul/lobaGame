@@ -1,6 +1,6 @@
 import Card from "./Card";
 
-const PlayerHand = ({ cards, onCardSelect, selectedCards, isFaceDown, soparableIds }) => {
+const PlayerHand = ({ cards, onCardSelect, selectedCards, isFaceDown, soparableIds, lastDrawnCardId }) => {
   return (
     <div className="player-hand">
       {cards.map((card) => {
@@ -14,6 +14,7 @@ const PlayerHand = ({ cards, onCardSelect, selectedCards, isFaceDown, soparableI
             onClick={isFaceDown ? null : () => onCardSelect(card)}
             isSelected={isSelected} // Selección basada en ID único
             isSoparable={isSoparable}
+            isDrawn={lastDrawnCardId === card.id}
           />
         );
       })}

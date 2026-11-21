@@ -1,4 +1,4 @@
-const Card = ({ rank, suit, onClick, isSelected, isSoparable }) => {
+const Card = ({ rank, suit, onClick, isSelected, isSoparable, isDrawn }) => {
   const isJoker = rank === "JOKER";
 
   const suitSymbols = {
@@ -19,7 +19,7 @@ const Card = ({ rank, suit, onClick, isSelected, isSoparable }) => {
 
   return (
     <div
-      className={`card ${isSelected ? "selected" : ""} ${isSoparable ? "soparable" : ""}`}
+      className={`card ${isSelected ? "selected" : ""} ${isSoparable ? "soparable" : ""} ${isDrawn ? "drawn" : ""}`}
       onClick={onClick}
       style={{
         borderColor: color,

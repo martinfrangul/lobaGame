@@ -38,6 +38,24 @@ body {
   transform: scale(1.1);
 }
 
+.card.drawn {
+  outline: 3px solid orange;
+  background-color: #fff3e0;
+  transform: scale(1.05);
+}
+
+.combination.selected-meld {
+  outline: 3px solid gold;
+  background-color: #fffbe6;
+  transform: scale(1.02);
+}
+
+/* Botones de modo seleccionados en setup */
+button.selected {
+  background-color: #28a745;
+  transform: scale(1.05);
+}
+
 .card.face-down {
   background-color: #444;
   border-color: #222;

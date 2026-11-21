@@ -37,6 +37,7 @@ const GameTable = () => {
   const [jokerChoice, setJokerChoice] = useState(null); // { cards, options, context }
   const [moveChoice, setMoveChoice] = useState(null); // { meldRef, naturalCard, jokerCard, leftRank, rightRank }
   const [showLegend, setShowLegend] = useState(false);
+  const [lastDrawnCardId, setLastDrawnCardId] = useState(null);
 
   const startGame = () => {
     const tempDeck = [...deck];
@@ -411,6 +412,7 @@ const GameTable = () => {
         )
       );
       setCardDrawn(true);
+      setLastDrawnCardId(card.id);
       return;
     }
 
@@ -431,6 +433,7 @@ const GameTable = () => {
         )
       );
       setCardDrawn(true);
+      setLastDrawnCardId(card.id);
     }
   };
 
@@ -667,6 +670,7 @@ const GameTable = () => {
     setSelectedCards([]);
     setSelectedMeld(null);
     setPendingJokers(0);
+    setLastDrawnCardId(null);
     setCurrentTurn((currentTurn + 1) % players.length);
   };
 
@@ -912,6 +916,7 @@ const GameTable = () => {
               onCardSelect={handleCardSelect}
               isFaceDown={false}
               soparableIds={(players[1]?.hand || []).filter(isSoparable).map((c) => c.id)}
+              lastDrawnCardId={lastDrawnCardId}
             />
           ) : (
             <div className="hand-count">{players[1].hand.length} cartas</div>
@@ -964,6 +969,7 @@ const GameTable = () => {
               onCardSelect={handleCardSelect}
               isFaceDown={false}
               soparableIds={(players[0]?.hand || []).filter(isSoparable).map((c) => c.id)}
+              lastDrawnCardId={lastDrawnCardId}
             />
           ) : (
             <div className="hand-count">{players[0].hand.length} cartas</div>
@@ -1074,7 +1080,7 @@ const GameTable = () => {
             {currentTurn !== null && (
               <>
                 <button className="icon-btn" onClick={handleDropCombination} title="Bajar combinación">➕</button>
-                <button className="icon-btn" onClick={handleLayoff} title="Agregar a combinación">📎</button>
+                <button className="icon-btn" onClick={handleLayoff} disabled={!selectedMeld} title="Agregar a combinación">📎</button>
                 <button className="icon-btn" onClick={handleSopar} title="Sopar seleccionadas">💨</button>
                 {jokerMode === "mobile" && (
                   <>
@@ -1138,6 +1144,7 @@ const GameTable = () => {
               onCardSelect={handleCardSelect}
               isFaceDown={false}
               soparableIds={(players[index]?.hand || []).filter(isSoparable).map((c) => c.id)}
+              lastDrawnCardId={lastDrawnCardId}
             />
           ) : (
             <div className="hand-count">{player.hand.length} cartas</div>
