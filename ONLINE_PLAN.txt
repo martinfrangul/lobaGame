@@ -1,60 +1,113 @@
 PLAN: Loba Online (Web, 2-4 jugadores)
+=======================================
 
 Objetivo
-Permitir que 2-4 amigos jueguen Loba online en el navegador, con lobby, salas y sincronizacion en tiempo real. No se busca escala masiva, solo partidas entre amigos.
+--------
+Permitir que 2-4 amigos jueguen Loba online en el navegador, con lobby, salas y
+sincronizacion en tiempo real. No se busca escala masiva, solo partidas entre
+amigos (objetivo maximo: unos miles de usuarios concurrentes).
+
+Estado actual del proyecto (importante para la nueva conversacion)
+-------------------------------------------------------------------
+- App React + Vite en src/ (no hay backend todavia).
+- Logica de juego MEZCLADA en src/components/GameTable.jsx (turnos, robo,
+  descarte, bajada, pegado, sopar, comodines, puntuacion, rondas, bots).
+- Logica pura parcial en src/utils/deck.js y src/utils/gameUtils.js.
+- UI ya esta "online-ready": cada jugador ve solo su mano abajo; los rivales
+  aparecen como badges con contador de cartas en su posicion (frente/derecha/
+  izquierda); la mesa muestra mazo, descarte y combinaciones compartidas.
+- Existe simulacion de rivales (bots) solo para hotseat/pruebas; en online NO
+  debe usarse (cada cliente es un humano real).
+- Configuracion por defecto: 2 jugadores, Loba de Menos, comodin fijo.
+- Reglas ya implementadas: piernas (orden por color), escaleras con As bajo,
+  comodines fijos/moviles, sustitucion/movimiento de comodin, no comodines
+  adyacentes, sopar, pegar a combinaciones de cualquiera, puntuacion por rondas
+  y eliminacion.
+- Pendiente (no bloqueante): migracion a Tailwind, reenganche, testing harness.
 
 Stack recomendado
-NO usar Next.js para el tiempo real: Next no maneja WebSockets de forma sencilla (especialmente en serverless). Para un proyecto entre amigos, lo mas simple y robusto es:
+-----------------
+NO usar Next.js para el tiempo real: Next no maneja WebSockets de forma
+sencilla (especialmente en serverless). Para un proyecto entre amigos, lo mas
+simple y robusto es:
 
 - Cliente: React + Vite (ya existente).
 - Servidor: Node.js + Express + Socket.io (autoritativo).
-- Logica compartida: paquete shared/ con mazo, validacion y puntuacion, usado por cliente y servidor.
-- Despliegue: un solo servicio Node que sirve el build del cliente y maneja Socket.io (Render, Railway o un VPS). Para amigos, una sola instancia es suficiente.
+- Logica compartida: paquete shared/ con mazo, validacion, puntuacion y
+  transiciones de ronda, usado por cliente y servidor.
+- Despliegue: un solo servicio Node que sirve el build del cliente y maneja
+  Socket.io (Render, Railway o un VPS).
 
-Alternativa sin servidor propio: usar un BaaS (Supabase/Firebase Realtime), pero la logica autoritativa del juego sigue necesitando un servidor o funciones edge. El stack Node + Socket.io es el mas directo y controlable.
+Escalabilidad: una sola instancia basta para amigos. Para miles de conexiones,
+anadir Redis adapter + Postgres + varias instancias detras de load balancer.
 
 Arquitectura
-- client/: app React actual.
-- server/: Node + Express + Socket.io.
-- shared/: logica pura de juego (mazo, validacion, rondas, puntuacion).
+------------
+- client/  : app React actual (src/).
+- server/  : Node + Express + Socket.io.
+- shared/  : logica pura de juego (sin React, sin DOM).
 
-El servidor es la unica fuente de verdad. Valida cada accion y envia:
-- Estado publico: mesa, combinaciones, puntos, turno, descarte.
-- Estado privado: solo la mano del jugador correspondiente.
+El servidor es la UNICA fuente de verdad. Valida cada accion y envia:
+- state:public  -> mesa, combinaciones, puntos, turno, descarte, configuracion.
+- state:private -> solo la mano del jugador correspondiente (nunca la de otros).
+
+Eventos WebSocket sugeridos
+---------------------------
+Cliente -> servidor:
+  room:create, room:join, room:leave, room:ready, game:start
+  action:draw, action:discard, action:drop, action:layoff, action:sopar,
+  action:substitute, action:moveJoker, action:sort (solo visual, opcional)
+
+Servidor -> cliente:
+  state:public, state:private, room:update, game:started, error, info
 
 Plan por ramas (orden recomendado)
+---------------------------------
 
 1. feat/online-shared-logic
-- Extraer deck.js, gameUtils.js y la logica de rondas/puntuacion a shared/.
-- Hacerla pura (sin React) y anadir tests unitarios.
-- Reutilizar en cliente y servidor.
+   - Extraer TODA la logica de GameTable.jsx a shared/ (funciones puras).
+   - Unificar deck.js y gameUtils.js dentro de shared/.
+   - Anadir tests unitarios (mazo 108 cartas, combinaciones, comodines,
+     puntuacion, rondas).
+   - El cliente pasa a importar desde shared/.
 
 2. feat/online-server
-- Servidor Node con Socket.io.
-- Gestion de salas: crear, unirse, salir, configuracion (jugadores, modo de juego, modo de comodin).
-- Estado autoritativo y validacion de acciones.
-- Emision de state:public + state:private por jugador.
+   - Servidor Node con Socket.io + Express.
+   - Gestion de salas: crear, unirse, salir, listos, iniciar.
+   - Configuracion por sala: numero de jugadores (2/3/4), modo de juego
+     (Loba de Menos / Mas), modo de comodin (fijo / movil).
+   - Estado autoritativo por sala; validar turno, carta en mano y
+     combinacion en el servidor.
+   - Emitir state:public a todos y state:private a cada socket.
 
 3. feat/online-client-socket
-- Conectar el cliente al servidor.
-- Reemplazar el estado local por estado recibido.
-- Renderizar mano propia desde state:private; rivales como contadores.
-- Mantener la UI actual (iconos, layout, drag visual).
+   - Conectar el cliente al servidor (Socket.io client).
+   - Sustituir el estado local por el estado recibido del servidor.
+   - La mano propia viene de state:private; los rivales solo ven contadores.
+   - Mantener la UI actual (iconos, drag, ordenamiento, modales).
+   - Desactivar/eliminar la simulacion de bots en modo online.
 
 4. feat/online-lobby-ui
-- Pantalla de lobby: crear/unirse a sala, lista de jugadores, listo, iniciar.
-- Manejo de desconexiones y reconexion (token de sesion).
+   - Pantalla de lobby: crear sala, unirse por codigo, lista de jugadores,
+     boton "listo", iniciar partida.
+   - Reconexion con token de sesion (volver a la sala con la mano intacta).
+   - Manejo de desconexiones y turnos.
 
 5. feat/online-deploy
-- Configuracion de hosting, variables de entorno, CORS.
-- Build del cliente servido por el mismo Node.
+   - Variables de entorno, CORS, build del cliente servido por el mismo Node.
+   - Despliegue en Render/Railway/VPS.
 
 Consideraciones
-- Privacidad: nunca enviar la mano de un jugador a otro.
-- Reconexión: permitir volver a la sala con la mano intacta.
-- Seguridad: validar cada accion en servidor (turno, carta en mano, combinacion valida).
-- Escalabilidad: una instancia es suficiente para amigos; si crece, usar Redis adapter.
+---------------
+- Privacidad: NUNCA enviar la mano de un jugador a otro.
+- Seguridad: validar cada accion en servidor; no confiar en el cliente.
+- Reconexion: permitir volver a la sala con la mano intacta.
+- Desincronizacion: el cliente siempre renderiza lo que envia el servidor.
+- Los bots de simulacion son solo para hotseat; en online no existen.
+- La UI ya esta preparada para "cada uno ve su mano".
 
-Notas
-- Prioridad: primero shared-logic, luego servidor, luego cliente.
-- Escala objetivo: miles de usuarios concurrentes como maximo. Para eso, una instancia con Redis adapter y Postgres es suficiente.
+Primer paso para la nueva conversacion
+--------------------------------------
+Abrir en modo Build y empezar por feat/online-shared-logic:
+extraer la logica de GameTable.jsx a shared/ sin cambiar el comportamiento,
+y verificar que el juego local sigue funcionando igual.
