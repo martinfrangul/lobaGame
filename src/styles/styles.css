@@ -215,6 +215,24 @@ button.selected {
   justify-content: center;
 }
 
+/* Resaltado de turno */
+.current-turn {
+  box-shadow: 0 0 0 2px rgba(74, 163, 255, 0.6), 0 8px 24px rgba(0, 0, 0, 0.25);
+  border-radius: var(--radius);
+}
+
+/* Focus accesible */
+button:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+}
+
+/* Transiciones suaves para paneles */
+.player-area,
+.center-area {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
 
 /* Pozo de descartes */
 .discard-pile {

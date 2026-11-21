@@ -983,7 +983,7 @@ const GameTable = () => {
           </button>
         </header>
 
-        <section className="opponent-area">
+        <section className={`opponent-area ${currentTurn === 1 ? "current-turn" : ""}`}>
           <h3>
             {players[1].name} — {players[1].points} pts
             {players[1].eliminated ? " (eliminado)" : ""}
@@ -1048,7 +1048,7 @@ const GameTable = () => {
           </div>
         </section>
 
-        <section className="player-area-bottom">
+        <section className={`player-area-bottom ${currentTurn === 0 ? "current-turn" : ""}`}>
           {currentTurn === 0 ? (
             <PlayerHand
               cards={players[0].hand}
@@ -1232,7 +1232,7 @@ const GameTable = () => {
               : index === 2
               ? "player-top"
               : "player-left"
-          }`}
+          } ${currentTurn === index ? "current-turn" : ""}`}
         >
           {currentTurn === index ? (
             <PlayerHand
