@@ -450,8 +450,10 @@ button:focus-visible {
 /* Mesa de juego */
 .game-table {
   position: relative;
-  width: 100vw;
+  width: 100%;
+  max-width: 1920px;
   height: 100vh;
+  margin: 0 auto;
   display: flex;
   justify-content: center;
   align-items: center;
