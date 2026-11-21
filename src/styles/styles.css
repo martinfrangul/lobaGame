@@ -144,6 +144,22 @@ button.selected {
   pointer-events: none;
 }
 
+.drag-container {
+  position: relative;
+}
+
+.drag-indicator {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #ffd700;
+  border-radius: 2px;
+  pointer-events: none;
+  transform: translateX(-50%);
+  z-index: 10;
+}
+
 /* Barra de ordenamiento por mano */
 .hand-toolbar {
   display: flex;
