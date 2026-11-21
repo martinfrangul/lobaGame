@@ -29,8 +29,8 @@ const GameTable = () => {
   const [cardDrawn, setCardDrawn] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
-  const [playerCount, setPlayerCount] = useState(4);
-  const [jokerMode, setJokerMode] = useState("mobile"); // "fixed" | "mobile"
+  const [playerCount, setPlayerCount] = useState(2);
+  const [jokerMode, setJokerMode] = useState("fixed"); // "fixed" | "mobile"
   const [gameMode, setGameMode] = useState("menos"); // "menos" | "mas"
   const [selectedMeld, setSelectedMeld] = useState(null); // { playerIndex, meldIndex }
   const [pendingJokers, setPendingJokers] = useState(0);
