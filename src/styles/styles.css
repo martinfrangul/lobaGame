@@ -461,7 +461,6 @@ button:focus-visible {
 
 /* Paneles glass */
 .top-bar,
-.center-area,
 .player-area,
 .hand-wrapper {
   background: rgba(255, 255, 255, 0.06);
@@ -469,6 +468,13 @@ button:focus-visible {
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
+}
+
+.center-area {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
 .center-area {
