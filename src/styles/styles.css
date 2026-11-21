@@ -144,15 +144,16 @@ button.selected {
 /* Pozo de descartes */
 .discard-pile {
   border: 2px dashed gray;
-  padding: 10px;
-  margin: 10px 0; /* Espaciado adicional para separar la pila de descarte */
-  width: 150px;
-  height: 200px;
+  padding: 4px;
+  margin: 4px;
+  width: 58px;
+  height: 78px;
   display: flex;
   justify-content: center;
   align-items: center;
   background-color: white;
-  position: relative; /* Garantiza que no se superponga */
+  position: relative;
+  border-radius: 6px;
 }
 
 .discard-pile .card {
