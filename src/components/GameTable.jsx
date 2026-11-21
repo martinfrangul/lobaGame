@@ -905,17 +905,17 @@ const GameTable = () => {
             {players[1].name} — {players[1].points} pts
             {players[1].eliminated ? " (eliminado)" : ""}
           </h3>
-          <PlayerHand
-            cards={players[1].hand}
-            selectedCards={currentTurn === 1 ? selectedCards : []}
-            onCardSelect={currentTurn === 1 ? handleCardSelect : undefined}
-            isFaceDown={currentTurn !== 1}
-            soparableIds={
-              currentTurn === 1
-                ? (players[1]?.hand || []).filter(isSoparable).map((c) => c.id)
-                : []
-            }
-          />
+          {currentTurn === 1 ? (
+            <PlayerHand
+              cards={players[1].hand}
+              selectedCards={selectedCards}
+              onCardSelect={handleCardSelect}
+              isFaceDown={false}
+              soparableIds={(players[1]?.hand || []).filter(isSoparable).map((c) => c.id)}
+            />
+          ) : (
+            <div className="hand-count">{players[1].hand.length} cartas</div>
+          )}
         </section>
 
         <section className="table-area">
@@ -957,17 +957,17 @@ const GameTable = () => {
         </section>
 
         <section className="player-area-bottom">
-          <PlayerHand
-            cards={players[0].hand}
-            selectedCards={currentTurn === 0 ? selectedCards : []}
-            onCardSelect={currentTurn === 0 ? handleCardSelect : undefined}
-            isFaceDown={currentTurn !== 0}
-            soparableIds={
-              currentTurn === 0
-                ? (players[0]?.hand || []).filter(isSoparable).map((c) => c.id)
-                : []
-            }
-          />
+          {currentTurn === 0 ? (
+            <PlayerHand
+              cards={players[0].hand}
+              selectedCards={selectedCards}
+              onCardSelect={handleCardSelect}
+              isFaceDown={false}
+              soparableIds={(players[0]?.hand || []).filter(isSoparable).map((c) => c.id)}
+            />
+          ) : (
+            <div className="hand-count">{players[0].hand.length} cartas</div>
+          )}
 
           <div className="actions">
             <button
@@ -1131,19 +1131,17 @@ const GameTable = () => {
               : "player-left"
           }`}
         >
-          <PlayerHand
-            cards={player.hand}
-            selectedCards={currentTurn === index ? selectedCards : []}
-            onCardSelect={currentTurn === index ? handleCardSelect : undefined}
-            isFaceDown={currentTurn !== index}
-            soparableIds={
-              currentTurn === index
-                ? (players[index]?.hand || [])
-                    .filter(isSoparable)
-                    .map((c) => c.id)
-                : []
-            }
-          />
+          {currentTurn === index ? (
+            <PlayerHand
+              cards={player.hand}
+              selectedCards={selectedCards}
+              onCardSelect={handleCardSelect}
+              isFaceDown={false}
+              soparableIds={(players[index]?.hand || []).filter(isSoparable).map((c) => c.id)}
+            />
+          ) : (
+            <div className="hand-count">{player.hand.length} cartas</div>
+          )}
         </div>
       ))}
 
