@@ -38,6 +38,8 @@ const GameTable = () => {
   const [moveChoice, setMoveChoice] = useState(null); // { meldRef, naturalCard, jokerCard, leftRank, rightRank }
   const [showLegend, setShowLegend] = useState(false);
   const [lastDrawnCardId, setLastDrawnCardId] = useState(null);
+  const [dragIndex, setDragIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
   const startGame = () => {
     const tempDeck = [...deck];
@@ -631,6 +633,74 @@ const GameTable = () => {
     }
   };
 
+  const RANK_ORDER_MAP = {
+    A: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9, 10: 10,
+    J: 11, Q: 12, K: 13, JOKER: 99,
+  };
+
+  const sortHand = (mode) => {
+    setPlayers((prev) =>
+      prev.map((player, index) => {
+        if (index !== currentTurn) return player;
+        const hand = [...player.hand];
+        if (mode === "suit") {
+          hand.sort((a, b) => {
+            if ((a.suit || "") !== (b.suit || "")) {
+              return (a.suit || "").localeCompare(b.suit || "");
+            }
+            return (RANK_ORDER_MAP[a.rank] || 99) - (RANK_ORDER_MAP[b.rank] || 99);
+          });
+        } else if (mode === "rank") {
+          hand.sort((a, b) => {
+            const r = (RANK_ORDER_MAP[a.rank] || 99) - (RANK_ORDER_MAP[b.rank] || 99);
+            if (r !== 0) return r;
+            return (a.suit || "").localeCompare(b.suit || "");
+          });
+        } else if (mode === "random") {
+          for (let i = hand.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [hand[i], hand[j]] = [hand[j], hand[i]];
+          }
+        }
+        return { ...player, hand };
+      })
+    );
+  };
+
+  const handleDragStart = (index) => {
+    setDragIndex(index);
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    if (dragIndex === null || dragIndex === index) return;
+    setDragOverIndex(index);
+  };
+
+  const handleDrop = (index) => {
+    if (dragIndex === null || dragIndex === index) {
+      setDragIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+    setPlayers((prev) =>
+      prev.map((player, pIndex) => {
+        if (pIndex !== currentTurn) return player;
+        const hand = [...player.hand];
+        const [moved] = hand.splice(dragIndex, 1);
+        hand.splice(index > dragIndex ? index - 1 : index, 0, moved);
+        return { ...player, hand };
+      })
+    );
+    setDragIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDragIndex(null);
+    setDragOverIndex(null);
+  };
+
   const handleDiscard = () => {
     if (!cardDrawn) {
       alert("Primero debes tomar una carta.");
@@ -917,6 +987,13 @@ const GameTable = () => {
               isFaceDown={false}
               soparableIds={(players[1]?.hand || []).filter(isSoparable).map((c) => c.id)}
               lastDrawnCardId={lastDrawnCardId}
+              draggable={true}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              onDragEnd={handleDragEnd}
+              dragIndex={dragIndex}
+              dragOverIndex={dragOverIndex}
             />
           ) : (
             <div className="hand-count">{players[1].hand.length} cartas</div>
@@ -970,6 +1047,13 @@ const GameTable = () => {
               isFaceDown={false}
               soparableIds={(players[0]?.hand || []).filter(isSoparable).map((c) => c.id)}
               lastDrawnCardId={lastDrawnCardId}
+              draggable={true}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              onDragEnd={handleDragEnd}
+              dragIndex={dragIndex}
+              dragOverIndex={dragOverIndex}
             />
           ) : (
             <div className="hand-count">{players[0].hand.length} cartas</div>
@@ -1004,6 +1088,27 @@ const GameTable = () => {
               title="Sopar seleccionadas"
             >
               💨
+            </button>
+            <button
+              className="icon-btn"
+              onClick={() => sortHand("suit")}
+              title="Ordenar por palo"
+            >
+              ♠️
+            </button>
+            <button
+              className="icon-btn"
+              onClick={() => sortHand("rank")}
+              title="Ordenar por número"
+            >
+              🔢
+            </button>
+            <button
+              className="icon-btn"
+              onClick={() => sortHand("random")}
+              title="Ordenar aleatorio"
+            >
+              🎲
             </button>
             {jokerMode === "mobile" && (
               <>
@@ -1082,6 +1187,10 @@ const GameTable = () => {
                 <button className="icon-btn" onClick={handleDropCombination} title="Bajar combinación">➕</button>
                 <button className="icon-btn" onClick={handleLayoff} disabled={!selectedMeld} title="Agregar a combinación">📎</button>
                 <button className="icon-btn" onClick={handleSopar} title="Sopar seleccionadas">💨</button>
+              <button className="icon-btn" onClick={() => sortHand("suit")} title="Ordenar por palo">♠️</button>
+              <button className="icon-btn" onClick={() => sortHand("rank")} title="Ordenar por número">🔢</button>
+              <button className="icon-btn" onClick={() => sortHand("random")} title="Ordenar aleatorio">🎲</button>
+
                 {jokerMode === "mobile" && (
                   <>
                     <button className="icon-btn" onClick={handleSubstituteJoker} title="Sustituir comodín">🔄</button>
@@ -1145,6 +1254,13 @@ const GameTable = () => {
               isFaceDown={false}
               soparableIds={(players[index]?.hand || []).filter(isSoparable).map((c) => c.id)}
               lastDrawnCardId={lastDrawnCardId}
+              draggable={true}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              onDragEnd={handleDragEnd}
+              dragIndex={dragIndex}
+              dragOverIndex={dragOverIndex}
             />
           ) : (
             <div className="hand-count">{player.hand.length} cartas</div>
