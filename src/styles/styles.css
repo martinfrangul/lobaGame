@@ -765,7 +765,9 @@ button:disabled {
   gap: 8px;
   padding: 8px;
   box-sizing: border-box;
-  width: 100%;
+  width: 75%;
+  max-width: 1920px;
+  margin: 0 auto;
 }
 
 .layout-3-4 .top-bar {
