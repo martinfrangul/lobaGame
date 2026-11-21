@@ -450,10 +450,10 @@ button:focus-visible {
 /* Mesa de juego */
 .game-table {
   position: relative;
-  width: 100%;
-  max-width: 1920px;
+  width: 100vw;
+  max-width: none;
   height: 100vh;
-  margin: 0 auto;
+  margin: 0;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -765,9 +765,9 @@ button:disabled {
   gap: 8px;
   padding: 8px;
   box-sizing: border-box;
-  width: 75%;
-  max-width: 1920px;
-  margin: 0 auto;
+  width: 100vw;
+  max-width: none;
+  margin: 0;
 }
 
 .layout-3-4 .top-bar {
@@ -776,9 +776,9 @@ button:disabled {
   left: auto;
   right: auto;
   transform: none;
-  width: 75%;
-  max-width: 1920px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
 }
 
 .layout-3-4 .center-area {
