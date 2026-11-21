@@ -1126,6 +1126,9 @@ const GameTable = () => {
 
       <header className="top-bar">
         <span className="turn-indicator">Turno: {players[currentTurn]?.name}</span>
+        {autoPlayOpponents && currentTurn !== 0 && (
+          <span className="turn-indicator bot-thinking">Rival pensando…</span>
+        )}
         <button className="icon-btn" onClick={() => setShowLegend(true)} title="Leyenda">❓</button>
       </header>
 
@@ -1188,9 +1191,6 @@ const GameTable = () => {
       <section className="bottom-area current-turn">
         {players[currentTurn] && (
           <>
-            {autoPlayOpponents && currentTurn !== 0 && (
-              <div className="bot-thinking">Rival pensando…</div>
-            )}
             <PlayerHand
               cards={players[autoPlayOpponents && currentTurn !== 0 ? 0 : currentTurn].hand}
               selectedCards={autoPlayOpponents && currentTurn !== 0 ? [] : selectedCards}
