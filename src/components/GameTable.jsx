@@ -266,7 +266,12 @@ const GameTable = () => {
     const meld = players[playerIndex].combinations[meldIndex];
     const newCards = [...meld.cards, ...selectedCards];
     const baseAssignment = meld.jokerAssignments || {};
-    const options = possibleAssignmentsForCards(newCards, baseAssignment);
+    // En modo móvil se permite reasignar comodines existentes si es necesario
+    const allowReassign = jokerMode === "mobile";
+    const options = possibleAssignmentsForCards(
+      newCards,
+      allowReassign ? {} : baseAssignment
+    );
 
     if (options.length === 0) {
       alert("La combinación resultante no es válida.");
@@ -1049,23 +1054,34 @@ const GameTable = () => {
 
   if (moveChoice) {
     return (
-      <div className="game-table">
-        <h2>Mover comodín</h2>
-        <p>Elige hacia dónde mover el comodín:</p>
-        <button onClick={() => finalizeMoveChoice("left")}>
-          Izquierda ({moveChoice.leftRank})
-        </button>
-        <button onClick={() => finalizeMoveChoice("right")}>
-          Derecha ({moveChoice.rightRank})
-        </button>
-        <button
-          onClick={() => {
-            setMoveChoice(null);
-            setSelectedCards([]);
-          }}
-        >
-          Cancelar
-        </button>
+      <div className="modal-overlay">
+        <div className="modal setup-card">
+          <h2>Mover comodín</h2>
+          <p>Elige hacia dónde mover el comodín:</p>
+          <div className="joker-choice-options">
+            <button
+              className="setup-option"
+              onClick={() => finalizeMoveChoice("left")}
+            >
+              Izquierda ({moveChoice.leftRank})
+            </button>
+            <button
+              className="setup-option"
+              onClick={() => finalizeMoveChoice("right")}
+            >
+              Derecha ({moveChoice.rightRank})
+            </button>
+          </div>
+          <button
+            className="setup-option"
+            onClick={() => {
+              setMoveChoice(null);
+              setSelectedCards([]);
+            }}
+          >
+            Cancelar
+          </button>
+        </div>
       </div>
     );
   }
@@ -1073,24 +1089,31 @@ const GameTable = () => {
   if (jokerChoice) {
     const jokers = jokerChoice.cards.filter((c) => c.rank === "JOKER");
     return (
-      <div className="game-table">
-        <h2>Elegir valor del comodín</h2>
-        <p>Hay varias interpretaciones válidas. Elige una:</p>
-        <div className="joker-choice-options">
-          {jokerChoice.options.map((opt, idx) => (
-            <button key={idx} onClick={() => finalizeJokerChoice(opt)}>
-              {jokers.map((j) => opt[j.id]).join(" / ")}
-            </button>
-          ))}
+      <div className="modal-overlay">
+        <div className="modal setup-card">
+          <h2>Elegir valor del comodín</h2>
+          <p>Hay varias interpretaciones válidas. Elige una:</p>
+          <div className="joker-choice-options">
+            {jokerChoice.options.map((opt, idx) => (
+              <button
+                key={idx}
+                className="setup-option"
+                onClick={() => finalizeJokerChoice(opt)}
+              >
+                {jokers.map((j) => opt[j.id]).join(" / ")}
+              </button>
+            ))}
+          </div>
+          <button
+            className="setup-option"
+            onClick={() => {
+              setJokerChoice(null);
+              setSelectedCards([]);
+            }}
+          >
+            Cancelar
+          </button>
         </div>
-        <button
-          onClick={() => {
-            setJokerChoice(null);
-            setSelectedCards([]);
-          }}
-        >
-          Cancelar
-        </button>
       </div>
     );
   }
@@ -1163,15 +1186,18 @@ const GameTable = () => {
       <section className="bottom-area current-turn">
         {players[currentTurn] && (
           <>
+            {autoPlayOpponents && currentTurn !== 0 && (
+              <div className="bot-thinking">Rival pensando…</div>
+            )}
             <PlayerHand
-              cards={players[currentTurn].hand}
-              selectedCards={selectedCards}
-              onCardSelect={handleCardSelect}
+              cards={players[autoPlayOpponents && currentTurn !== 0 ? 0 : currentTurn].hand}
+              selectedCards={autoPlayOpponents && currentTurn !== 0 ? [] : selectedCards}
+              onCardSelect={autoPlayOpponents && currentTurn !== 0 ? undefined : handleCardSelect}
               isFaceDown={false}
-              soparableIds={(players[currentTurn]?.hand || []).filter(isSoparable).map((c) => c.id)}
+              soparableIds={[]}
               lastDrawnCardId={lastDrawnCardId}
-              onSort={sortHand}
-              draggable={true}
+              onSort={autoPlayOpponents && currentTurn !== 0 ? undefined : sortHand}
+              draggable={!(autoPlayOpponents && currentTurn !== 0)}
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
@@ -1179,6 +1205,7 @@ const GameTable = () => {
               dragIndex={dragIndex}
               dragOverIndex={dragOverIndex}
             />
+            {!(autoPlayOpponents && currentTurn !== 0) && (
             <div className="actions">
               <button className="icon-btn" onClick={() => handleDrawCard("deck")} disabled={cardDrawn} title="Robar del mazo">🂠</button>
               <button className="icon-btn" onClick={() => handleDrawCard("discardPile")} disabled={cardDrawn || discardPile.length === 0} title="Robar del pozo">📥</button>
@@ -1198,6 +1225,7 @@ const GameTable = () => {
                 </>
               )}
             </div>
+            )}
           </>
         )}
       </section>
