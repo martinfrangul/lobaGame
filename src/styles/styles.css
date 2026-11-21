@@ -221,6 +221,43 @@ button.selected {
   border-radius: var(--radius);
 }
 
+/* Responsive */
+@media (max-width: 900px) {
+  .card {
+    width: 44px;
+    height: 62px;
+    font-size: 12px;
+  }
+
+  .icon-btn {
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+  }
+
+  .layout-3-4 .center-area {
+    max-width: 90vw;
+  }
+
+  .layout-3-4 .table-combinations {
+    max-width: 90vw;
+  }
+}
+
+@media (min-width: 1400px) {
+  .card {
+    width: 58px;
+    height: 82px;
+    font-size: 15px;
+  }
+
+  .icon-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 20px;
+  }
+}
+
 /* Focus accesible */
 button:focus-visible {
   outline: 2px solid var(--accent-2);
