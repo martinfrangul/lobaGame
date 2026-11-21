@@ -325,6 +325,15 @@ button.selected {
   transform: translateY(-1px);
 }
 
+.setup-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
 .start-button {
   width: 100%;
   margin-top: 8px;

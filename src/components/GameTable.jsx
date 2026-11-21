@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PlayerHand from "./PlayerHand";
 import Card from "./Card";
 import DiscardPile from "./DiscardPile";
@@ -37,6 +37,7 @@ const GameTable = () => {
   const [jokerChoice, setJokerChoice] = useState(null); // { cards, options, context }
   const [moveChoice, setMoveChoice] = useState(null); // { meldRef, naturalCard, jokerCard, leftRank, rightRank }
   const [showLegend, setShowLegend] = useState(false);
+  const [autoPlayOpponents, setAutoPlayOpponents] = useState(false);
   const [lastDrawnCardId, setLastDrawnCardId] = useState(null);
   const [dragIndex, setDragIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
@@ -856,6 +857,122 @@ const GameTable = () => {
     setCardDrawn(false);
   };
 
+  // --- Simulación de rivales (bots) ---
+  const findBotCombination = (hand) => {
+    // Busca una combinación válida de 3 o 4 cartas
+    const tryCombo = (indices) => {
+      const cards = indices.map((i) => hand[i]);
+      return isValidCombination(cards) ? cards : null;
+    };
+
+    // 3 cartas
+    for (let a = 0; a < hand.length; a++) {
+      for (let b = a + 1; b < hand.length; b++) {
+        for (let c = b + 1; c < hand.length; c++) {
+          const combo = tryCombo([a, b, c]);
+          if (combo) return combo;
+        }
+      }
+    }
+    // 4 cartas
+    for (let a = 0; a < hand.length; a++) {
+      for (let b = a + 1; b < hand.length; b++) {
+        for (let c = b + 1; c < hand.length; c++) {
+          for (let d = c + 1; d < hand.length; d++) {
+            const combo = tryCombo([a, b, c, d]);
+            if (combo) return combo;
+          }
+        }
+      }
+    }
+    return null;
+  };
+
+  useEffect(() => {
+    if (!gameStarted || !autoPlayOpponents) return;
+    if (currentTurn === 0) return; // humano
+    if (gameOver) return;
+
+    const timer = setTimeout(() => {
+      // 1) Robar
+      let workingDeck = [...deck];
+      let workingDiscard = [...discardPile];
+      if (workingDeck.length === 0 && workingDiscard.length > 1) {
+        const top = workingDiscard[workingDiscard.length - 1];
+        workingDeck = shuffleDeck(workingDiscard.slice(0, -1));
+        workingDiscard = [top];
+      }
+      if (workingDeck.length === 0) return;
+
+      const drawn = workingDeck[workingDeck.length - 1];
+      const restDeck = workingDeck.slice(0, -1);
+
+      setDeck(restDeck);
+      setDiscardPile(workingDiscard);
+
+      setPlayers((prev) =>
+        prev.map((player, index) =>
+          index === currentTurn
+            ? { ...player, hand: [...player.hand, drawn] }
+            : player
+        )
+      );
+
+      // 2) Bajar combinación si puede (tras un pequeño delay)
+      setTimeout(() => {
+        setPlayers((prev) => {
+          const player = prev[currentTurn];
+          const combo = findBotCombination(player.hand);
+          if (!combo) return prev;
+
+          const comboIds = new Set(combo.map((c) => c.id));
+          const updated = prev.map((p, index) => {
+            if (index !== currentTurn) return p;
+            return {
+              ...p,
+              hand: p.hand.filter((c) => !comboIds.has(c.id)),
+              combinations: [...p.combinations, { id: `${Date.now()}`, cards: combo, jokerAssignments: {} }],
+            };
+          });
+          return updated;
+        });
+
+        // 3) Descartar
+        setTimeout(() => {
+          setPlayers((prev) => {
+            const player = prev[currentTurn];
+            if (player.hand.length === 0) return prev;
+
+            // Elegir carta de mayor penalización
+            const cardToDiscard = [...player.hand].sort(
+              (a, b) => cardValue(b) - cardValue(a)
+            )[0];
+
+            const newHand = player.hand.filter((c) => c.id !== cardToDiscard.id);
+
+            setDiscardPile((d) => [...d, cardToDiscard]);
+
+            const updated = prev.map((p, index) =>
+              index === currentTurn ? { ...p, hand: newHand } : p
+            );
+
+            if (newHand.length === 0) {
+              endRound(currentTurn);
+            } else {
+              setCardDrawn(false);
+              setSelectedCards([]);
+              setPendingJokers(0);
+              setCurrentTurn((currentTurn + 1) % players.length);
+            }
+            return updated;
+          });
+        }, 600);
+      }, 600);
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [currentTurn, autoPlayOpponents, gameStarted, gameOver]);
+
   if (!gameStarted) {
     return (
       <div className="game-table setup-screen">
@@ -914,6 +1031,14 @@ const GameTable = () => {
             </div>
           </div>
 
+          <label className="setup-checkbox">
+            <input
+              type="checkbox"
+              checked={autoPlayOpponents}
+              onChange={(e) => setAutoPlayOpponents(e.target.checked)}
+            />
+            Simular rivales automáticamente
+          </label>
           <button className="start-button" onClick={startGame}>
             Iniciar partida
           </button>
