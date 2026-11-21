@@ -859,51 +859,65 @@ const GameTable = () => {
   if (!gameStarted) {
     return (
       <div className="game-table setup-screen">
-        <h1>Loba</h1>
-        <p>¿Cuántos jugadores?</p>
-        <div className="player-count-options">
-          {[2, 3, 4].map((count) => (
-            <button
-              key={count}
-              className={playerCount === count ? "selected" : ""}
-              onClick={() => setPlayerCount(count)}
-            >
-              {count} jugadores
-            </button>
-          ))}
-        </div>
-        <p>Modo de juego:</p>
-        <div className="game-mode-options">
-          <button
-            className={gameMode === "menos" ? "selected" : ""}
-            onClick={() => setGameMode("menos")}
-          >
-            Loba de Menos
-          </button>
-          <button
-            className={gameMode === "mas" ? "selected" : ""}
-            onClick={() => setGameMode("mas")}
-          >
-            Loba de Más
-          </button>
-        </div>
+        <div className="setup-card">
+          <h1>Loba</h1>
+          <p className="setup-subtitle">Configura tu partida</p>
 
-        <p>Modo de comodín:</p>
-        <div className="joker-mode-options">
-          <button
-            className={jokerMode === "fixed" ? "selected" : ""}
-            onClick={() => setJokerMode("fixed")}
-          >
-            Fijo
-          </button>
-          <button
-            className={jokerMode === "mobile" ? "selected" : ""}
-            onClick={() => setJokerMode("mobile")}
-          >
-            Móvil
+          <div className="setup-section">
+            <h3>Jugadores</h3>
+            <div className="setup-options">
+              {[2, 3, 4].map((count) => (
+                <button
+                  key={count}
+                  className={`setup-option ${playerCount === count ? "selected" : ""}`}
+                  onClick={() => setPlayerCount(count)}
+                >
+                  {count}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="setup-section">
+            <h3>Modo de juego</h3>
+            <div className="setup-options">
+              <button
+                className={`setup-option ${gameMode === "menos" ? "selected" : ""}`}
+                onClick={() => setGameMode("menos")}
+              >
+                Loba de Menos
+              </button>
+              <button
+                className={`setup-option ${gameMode === "mas" ? "selected" : ""}`}
+                onClick={() => setGameMode("mas")}
+              >
+                Loba de Más
+              </button>
+            </div>
+          </div>
+
+          <div className="setup-section">
+            <h3>Modo de comodín</h3>
+            <div className="setup-options">
+              <button
+                className={`setup-option ${jokerMode === "fixed" ? "selected" : ""}`}
+                onClick={() => setJokerMode("fixed")}
+              >
+                Fijo
+              </button>
+              <button
+                className={`setup-option ${jokerMode === "mobile" ? "selected" : ""}`}
+                onClick={() => setJokerMode("mobile")}
+              >
+                Móvil
+              </button>
+            </div>
+          </div>
+
+          <button className="start-button" onClick={startGame}>
+            Iniciar partida
           </button>
         </div>
-        <button onClick={startGame}>Iniciar partida</button>
       </div>
     );
   }
