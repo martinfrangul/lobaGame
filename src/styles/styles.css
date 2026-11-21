@@ -342,6 +342,12 @@ button.selected {
   color: var(--muted);
 }
 
+.thinking-slot {
+  display: inline-block;
+  min-width: 140px;
+  text-align: left;
+}
+
 .joker-choice-options {
   display: flex;
   gap: 8px;

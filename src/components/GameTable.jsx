@@ -96,6 +96,32 @@ const GameTable = () => {
       K: 13,
     };
 
+    const suitOrder = { clubs: 1, diamonds: 2, hearts: 3, spades: 4 };
+
+    // Pierna (mismo rango, sin comodines): orden por color alternado
+    const isGroup =
+      cards.length >= 3 &&
+      cards.every((c) => c.rank === cards[0].rank) &&
+      !cards.some((c) => c.rank === "JOKER");
+
+    if (isGroup) {
+      const reds = cards
+        .filter((c) => c.suit === "hearts" || c.suit === "diamonds")
+        .sort((a, b) => (suitOrder[a.suit] || 99) - (suitOrder[b.suit] || 99));
+      const blacks = cards
+        .filter((c) => c.suit === "clubs" || c.suit === "spades")
+        .sort((a, b) => (suitOrder[a.suit] || 99) - (suitOrder[b.suit] || 99));
+
+      const [first, second] = reds.length >= blacks.length ? [reds, blacks] : [blacks, reds];
+      const result = [];
+      const max = Math.max(first.length, second.length);
+      for (let i = 0; i < max; i++) {
+        if (i < first.length) result.push(first[i]);
+        if (i < second.length) result.push(second[i]);
+      }
+      return result;
+    }
+
     const rankOf = (card) => {
       if (card.rank === "JOKER") {
         const assigned = assignment[card.id];
@@ -1126,9 +1152,11 @@ const GameTable = () => {
 
       <header className="top-bar">
         <span className="turn-indicator">Turno: {players[currentTurn]?.name}</span>
-        {autoPlayOpponents && currentTurn !== 0 && (
-          <span className="turn-indicator bot-thinking">Rival pensando…</span>
-        )}
+        <span className="thinking-slot">
+          {autoPlayOpponents && currentTurn !== 0 && (
+            <span className="bot-thinking">Rival pensando…</span>
+          )}
+        </span>
         <button className="icon-btn" onClick={() => setShowLegend(true)} title="Leyenda">❓</button>
       </header>
 
