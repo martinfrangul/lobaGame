@@ -22,6 +22,12 @@ const PlayerHand = ({
       onDragOver={(e) => {
         if (!draggable) return;
         e.preventDefault();
+        if (onDragOver) onDragOver(e, cards.length);
+      }}
+      onDrop={(e) => {
+        if (!draggable) return;
+        e.preventDefault();
+        if (onDrop) onDrop(null);
       }}
     >
       {cards.map((card, index) => {
@@ -40,8 +46,18 @@ const PlayerHand = ({
               className={`draggable-card ${dragIndex === index ? "dragging" : ""}`}
               draggable={!!draggable && !isFaceDown}
               onDragStart={() => draggable && onDragStart && onDragStart(index)}
-              onDragOver={(e) => draggable && onDragOver && onDragOver(e, index)}
-              onDrop={() => draggable && onDrop && onDrop(index)}
+              onDragOver={(e) => {
+                if (!draggable || !onDragOver) return;
+                e.preventDefault();
+                e.stopPropagation();
+                onDragOver(e, index);
+              }}
+              onDrop={(e) => {
+                if (!draggable || !onDrop) return;
+                e.preventDefault();
+                e.stopPropagation();
+                onDrop(index);
+              }}
               onDragEnd={() => draggable && onDragEnd && onDragEnd()}
             >
               <Card

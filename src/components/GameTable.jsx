@@ -677,8 +677,14 @@ const GameTable = () => {
     setDragOverIndex(index);
   };
 
-  const handleDrop = (index) => {
-    if (dragIndex === null || dragIndex === index) {
+  const handleDrop = (index = null) => {
+    const target = index !== null ? index : dragOverIndex;
+    if (dragIndex === null) {
+      setDragIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+    if (target === null || target === dragIndex) {
       setDragIndex(null);
       setDragOverIndex(null);
       return;
@@ -688,7 +694,10 @@ const GameTable = () => {
         if (pIndex !== currentTurn) return player;
         const hand = [...player.hand];
         const [moved] = hand.splice(dragIndex, 1);
-        hand.splice(index > dragIndex ? index - 1 : index, 0, moved);
+        // Insertar antes del objetivo; si el objetivo era posterior, ajustar
+        const insertAt = target > dragIndex ? target - 1 : target;
+        const safeIndex = Math.max(0, Math.min(hand.length, insertAt));
+        hand.splice(safeIndex, 0, moved);
         return { ...player, hand };
       })
     );
