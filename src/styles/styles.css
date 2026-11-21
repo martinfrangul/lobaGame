@@ -392,11 +392,11 @@ button.selected {
   }
 
   .layout-3-4 .center-area {
-    max-width: 90vw;
+    max-width: 100%;
   }
 
   .layout-3-4 .table-combinations {
-    max-width: 90vw;
+    max-width: 100%;
   }
 }
 
@@ -597,7 +597,7 @@ button:disabled {
   justify-content: center;
   align-items: center;
   gap: 4px;
-  max-width: 90vw;
+  max-width: 100%;
 }
 
 /* Layout 2 jugadores */
@@ -704,7 +704,7 @@ button:disabled {
   color: white;
   padding: 16px;
   border-radius: 8px;
-  max-width: 90vw;
+  max-width: 100%;
 }
 
 .legend-list {
@@ -797,7 +797,7 @@ button:disabled {
   gap: 6px;
   align-items: center;
   justify-content: center;
-  max-width: 70vw;
+  max-width: 100%;
   max-height: 90px;
   overflow-x: auto;
   overflow-y: hidden;

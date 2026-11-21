@@ -964,7 +964,7 @@ const GameTable = () => {
             return {
               ...p,
               hand: p.hand.filter((c) => !comboIds.has(c.id)),
-              combinations: [...p.combinations, { id: `${Date.now()}`, cards: combo, jokerAssignments: {} }],
+              combinations: [...p.combinations, { id: `${Date.now()}`, cards: orderCards(combo), jokerAssignments: {} }],
             };
           });
           return updated;
