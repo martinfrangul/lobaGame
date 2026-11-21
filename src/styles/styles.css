@@ -1,27 +1,50 @@
+/* Tokens de diseño */
+:root {
+  --bg-table: #1f3b57;
+  --bg-table-2: #162a40;
+  --panel: rgba(255, 255, 255, 0.08);
+  --panel-2: rgba(255, 255, 255, 0.12);
+  --text: #f5f7fa;
+  --muted: #b7c3d0;
+  --accent: #4aa3ff;
+  --accent-2: #7dd3fc;
+  --success: #3dd598;
+  --danger: #ff6b6b;
+  --card-bg: #ffffff;
+  --card-border: #d6dde6;
+  --radius: 10px;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+}
+
 /* Estilos básicos */
 body {
-  font-family: Arial, sans-serif;
-  background-color: #2c3e50;
-  color: white;
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+  background: radial-gradient(circle at top, var(--bg-table), var(--bg-table-2));
+  color: var(--text);
   margin: 0;
   padding: 0;
 }
 
 /* Cartas */
 .card {
-  width: 50px;
-  height: 70px;
-  background-color: white;
-  border: 2px solid black;
-  border-radius: 5px;
+  width: 52px;
+  height: 74px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   text-align: center;
   font-size: 14px;
-  color: black;
-  transition: transform 0.2s;
+  color: #1f2937;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .card.red {
@@ -262,23 +285,27 @@ button.selected {
 
 /* Botones */
 button {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  padding: 10px 15px;
-  margin: 10px;
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  margin: var(--space-1);
   cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-button:disabled {
-  background-color: gray;
-  cursor: not-allowed;
+  transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 button:hover:not(:disabled) {
-  background-color: #0056b3;
+  background: rgba(255, 255, 255, 0.18);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* Mejoras visuales en el área central */
