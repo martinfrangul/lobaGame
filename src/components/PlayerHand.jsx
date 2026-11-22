@@ -114,6 +114,7 @@ const PlayerHand = ({
                 isSelected={isSelected}
                 isSoparable={isSoparable}
                 isDrawn={lastDrawnCardId === card.id}
+                isMustUse={lastDrawnCardId === card.id}
               />
             </div>
           );
