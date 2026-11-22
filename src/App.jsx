@@ -2,9 +2,11 @@ import { useState } from "react";
 import { GameProvider } from "./context/gameState";
 import GameTable from "./components/GameTable";
 import OnlineApp from "./components/OnlineApp";
+import ConfirmModal from "./components/ConfirmModal";
 
 const App = () => {
   const [mode, setMode] = useState(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const goMenu = () => setMode(null);
 
@@ -15,14 +17,20 @@ const App = () => {
           <button
             className="icon-btn"
             style={{ position: "fixed", top: 8, right: 8, zIndex: 10 }}
-            onClick={() => {
-              if (!window.confirm("¿Seguro que quieres cancelar la partida? Se perderá todo el progreso.")) return;
-              goMenu();
-            }}
+            onClick={() => setConfirmOpen(true)}
           >
             ← Menú
           </button>
           <GameTable />
+          <ConfirmModal
+            open={confirmOpen}
+            title="Cancelar partida"
+            message="¿Seguro que quieres cancelar la partida? Se perderá todo el progreso."
+            confirmLabel="Salir"
+            cancelLabel="Seguir jugando"
+            onConfirm={() => { setConfirmOpen(false); goMenu(); }}
+            onCancel={() => setConfirmOpen(false)}
+          />
         </div>
       </GameProvider>
     );
