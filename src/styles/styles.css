@@ -1209,3 +1209,18 @@ button:disabled {
   0%, 100% { box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.35), 0 10px 20px rgba(0,0,0,0.25); }
   50% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.55), 0 10px 20px rgba(0,0,0,0.25); }
 }
+
+/* Scoreboard */
+.scoreboard { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.score-chip { background: rgba(255,255,255,0.12); padding: 4px 8px; border-radius: 999px; font-size: 12px; }
+.score-chip.active { background: rgba(59,130,246,0.35); font-weight: 700; }
+.score-chip.eliminated { opacity: 0.45; text-decoration: line-through; }
+
+/* Round result modal */
+.round-result-modal { max-width: 420px; }
+.round-winner { font-weight: 700; margin: 8px 0; }
+.round-table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+.round-table th, .round-table td { padding: 6px 8px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.15); }
+.round-table th { font-size: 12px; opacity: 0.8; }
+.round-table tr.eliminated td { opacity: 0.45; }
+.round-countdown { font-size: 13px; opacity: 0.8; margin: 8px 0; }

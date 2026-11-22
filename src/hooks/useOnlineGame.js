@@ -131,6 +131,9 @@ export function useOnlineGame() {
 
   // actions
   const draw = useCallback((source) => emit("action:draw", { source }), [emit]);
+  const continueRound = useCallback(() => emit("game:continueRound", {}, (res) => {
+    if (!res?.ok) setError(res?.error || "No se pudo continuar");
+  }), [emit]);
   const undoDraw = useCallback(() => emit("action:undoDraw", {}, (res) => {
     if (!res?.ok) setError(res?.error || "No se pudo deshacer");
   }), [emit]);
@@ -177,6 +180,7 @@ export function useOnlineGame() {
     myIndex,
     draw,
     undoDraw,
+    continueRound,
     discard,
     drop,
     layoff,

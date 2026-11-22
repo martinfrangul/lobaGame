@@ -54,6 +54,7 @@ function emitState(io, room) {
     drawnCardId: game.drawnCardId || null,
     pendingJokers: game.pendingJokers || 0,
     gameOver: !!game.gameOver,
+    roundResult: game.roundResult || null,
   };
   io.to(room.code).emit("state:public", publicState);
 
@@ -86,6 +87,8 @@ function createGame(room) {
     pendingJokers: 0,
     gameOver: false,
     started: true,
+    roundResult: null,
+    roundTimer: null,
     pendingChoice: null,
     pendingMoveChoice: null,
   };
@@ -261,7 +264,9 @@ export function registerHandlers(io) {
       player.hand = newHand;
 
       if (newHand.length === 0) {
+        const prevPlayers = game.players;
         const result = computeEndRound(game.players, idx, game.config.gameMode);
+        const deltas = result.players.map((p, i) => p.points - (prevPlayers[i]?.points || 0));
         game.players = result.players;
         if (result.gameOver) {
           game.gameOver = true;
@@ -269,15 +274,28 @@ export function registerHandlers(io) {
           io.to(room.code).emit("info", { message: msg });
           io.to(room.code).emit("game:over", { winnerName: result.winnerName });
         } else {
-          const round = sharedStartNewRound(idx, result.players);
-          game.players = round.players;
-          game.deck = round.deck;
-          game.discardPile = round.discardPile;
-          game.currentTurn = round.currentTurn;
-          game.cardDrawn = false;
-          game.pendingJokers = 0;
-          game.drawnFromDiscard = false;
-          game.drawnCardId = null;
+          game.roundResult = {
+            winnerIndex: idx,
+            winnerName: result.winnerName || game.players[idx]?.name || `Jugador ${idx + 1}`,
+            players: result.players,
+            deltas,
+          };
+          if (game.roundTimer) clearTimeout(game.roundTimer);
+          game.roundTimer = setTimeout(() => {
+            if (!room.game || room.game !== game || !game.roundResult) return;
+            const round = sharedStartNewRound(idx, game.players);
+            game.players = round.players;
+            game.deck = round.deck;
+            game.discardPile = round.discardPile;
+            game.currentTurn = round.currentTurn;
+            game.cardDrawn = false;
+            game.pendingJokers = 0;
+            game.drawnFromDiscard = false;
+            game.drawnCardId = null;
+            game.roundResult = null;
+            game.roundTimer = null;
+            emitState(io, room);
+          }, 6000);
         }
       } else {
         game.cardDrawn = false;
@@ -597,14 +615,30 @@ export function registerHandlers(io) {
           io.to(room.code).emit("info", { message: msg });
           io.to(room.code).emit("game:over", { winnerName: result.winnerName });
         } else {
-          const round = sharedStartNewRound(idx, result.players);
-          game.players = round.players;
-          game.deck = round.deck;
-          game.discardPile = round.discardPile;
-          game.currentTurn = round.currentTurn;
-          game.cardDrawn = false;
-          game.pendingJokers = 0;
-        }
+          const prevPlayers = game.players;
+          const deltas = result.players.map((p, i) => p.points - (prevPlayers[i]?.points || 0));
+          game.roundResult = {
+            winnerIndex: idx,
+            winnerName: result.winnerName || game.players[idx]?.name || `Jugador ${idx + 1}`,
+            players: result.players,
+            deltas,
+          };
+          if (game.roundTimer) clearTimeout(game.roundTimer);
+          game.roundTimer = setTimeout(() => {
+            if (!room.game || room.game !== game || !game.roundResult) return;
+            const round = sharedStartNewRound(idx, game.players);
+            game.players = round.players;
+            game.deck = round.deck;
+            game.discardPile = round.discardPile;
+            game.currentTurn = round.currentTurn;
+            game.cardDrawn = false;
+            game.pendingJokers = 0;
+            game.drawnFromDiscard = false;
+            game.drawnCardId = null;
+            game.roundResult = null;
+            game.roundTimer = null;
+            emitState(io, room);
+          }, 6000);
       }
       emitState(io, room);
     });
@@ -741,6 +775,27 @@ export function registerHandlers(io) {
       game.cardDrawn = false;
       game.drawnFromDiscard = false;
       game.drawnCardId = null;
+      emitState(io, room);
+      if (typeof cb === "function") cb({ ok: true });
+    });
+
+    socket.on("game:continueRound", (_payload, cb) => {
+      const room = getRoomBySocket(socket.id);
+      if (!room || !room.game) return fail(socket, "No hay partida activa");
+      const game = room.game;
+      if (!game.roundResult) return fail(socket, "No hay ronda pendiente");
+      const idx = game.roundResult.winnerIndex;
+      if (game.roundTimer) { clearTimeout(game.roundTimer); game.roundTimer = null; }
+      const round = sharedStartNewRound(idx, game.players);
+      game.players = round.players;
+      game.deck = round.deck;
+      game.discardPile = round.discardPile;
+      game.currentTurn = round.currentTurn;
+      game.cardDrawn = false;
+      game.pendingJokers = 0;
+      game.drawnFromDiscard = false;
+      game.drawnCardId = null;
+      game.roundResult = null;
       emitState(io, room);
       if (typeof cb === "function") cb({ ok: true });
     });

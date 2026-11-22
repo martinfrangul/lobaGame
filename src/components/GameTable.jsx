@@ -34,6 +34,8 @@ const GameTable = () => {
 
   const [selectedCards, setSelectedCards] = useState([]);
   const [notice, setNotice] = useState(null);
+  const [roundResult, setRoundResult] = useState(null);
+  const [roundCountdown, setRoundCountdown] = useState(0);
   const [cardDrawn, setCardDrawn] = useState(false);
   const [drawnFromDiscard, setDrawnFromDiscard] = useState(false);
   const [drawnCardId, setDrawnCardId] = useState(null);
@@ -57,6 +59,16 @@ const GameTable = () => {
     const t = setTimeout(() => setNotice(null), 2600);
     return () => clearTimeout(t);
   }, [notice]);
+
+  useEffect(() => {
+    if (!roundResult) return;
+    if (roundCountdown <= 0) {
+      continueRound();
+      return;
+    }
+    const t = setTimeout(() => setRoundCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [roundResult, roundCountdown]);
 
   const startGame = () => {
     const result = sharedStartGame({ playerCount }, deck);
@@ -739,8 +751,9 @@ const GameTable = () => {
   const endRound = (winnerIndex) => {
     const result = computeEndRound(players, winnerIndex, gameMode);
 
+    setPlayers(result.players);
+
     if (result.gameOver) {
-      setPlayers(result.players);
       setGameOver(true);
       if (result.winnerName) {
         setNotice(`¡${result.winnerName} ha ganado la partida!`);
@@ -748,8 +761,21 @@ const GameTable = () => {
       return;
     }
 
-    setPlayers(result.players);
-    startNewRound(winnerIndex, result.players);
+    const deltas = result.players.map((p, i) => p.points - (players[i]?.points || 0));
+    setRoundResult({
+      winnerIndex,
+      winnerName: players[winnerIndex]?.name || `Jugador ${winnerIndex + 1}`,
+      players: result.players,
+      deltas,
+    });
+    setRoundCountdown(6);
+  };
+
+  const continueRound = () => {
+    if (!roundResult) return;
+    startNewRound(roundResult.winnerIndex, roundResult.players);
+    setRoundResult(null);
+    setRoundCountdown(0);
   };
 
   const startNewRound = (winnerIndex, currentPlayers) => {
@@ -1001,6 +1027,13 @@ const GameTable = () => {
 
       <header className="top-bar">
         <span className="turn-indicator">Turno: {players[currentTurn]?.name}</span>
+        <span className="scoreboard">
+          {players.map((p, i) => (
+            <span key={i} className={`score-chip ${i === currentTurn ? "active" : ""} ${p.eliminated ? "eliminated" : ""}`}>
+              {p.name}: {p.points}
+            </span>
+          ))}
+        </span>
         <span className="thinking-slot">
           {autoPlayOpponents && currentTurn !== 0 && (
             <span className="bot-thinking">Rival pensando…</span>
@@ -1113,6 +1146,35 @@ const GameTable = () => {
           </>
         )}
       </section>
+
+      {roundResult && (
+        <div className="modal-overlay">
+          <div className="modal setup-card round-result-modal">
+            <h2>Resultados de la ronda</h2>
+            <p className="round-winner">Ganador: {roundResult.winnerName}</p>
+            <table className="round-table">
+              <thead>
+                <tr>
+                  <th>Jugador</th>
+                  <th>Ronda</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {roundResult.players.map((p, i) => (
+                  <tr key={i} className={p.eliminated ? "eliminated" : ""}>
+                    <td>{p.name}</td>
+                    <td>{roundResult.deltas[i] > 0 ? `+${roundResult.deltas[i]}` : roundResult.deltas[i]}</td>
+                    <td>{p.points}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="round-countdown">Continuando en {roundCountdown}s…</p>
+            <button className="start-button" onClick={continueRound}>Continuar</button>
+          </div>
+        </div>
+      )}
 
       {showLegend && (
         <div className="modal-overlay">

@@ -12,6 +12,7 @@ const OnlineGameTable = ({ game }) => {
     socketId,
     draw,
     undoDraw,
+    continueRound,
     discard,
     drop,
     layoff,
@@ -199,8 +200,15 @@ const OnlineGameTable = ({ game }) => {
 
       <header className="top-bar">
         <span className="turn-indicator">Turno: {players[currentTurn]?.name}</span>
+        <span className="scoreboard">
+          {players.map((p, i) => (
+            <span key={i} className={`score-chip ${i === currentTurn ? "active" : ""} ${p.eliminated ? "eliminated" : ""}`}>
+              {p.name}: {p.points}
+            </span>
+          ))}
+        </span>
         <span className="thinking-slot" />
-        <button className="icon-btn" onClick={() => setShowLegend(true)} title="Leyenda">❓</button>
+        <button className="icon-btn" onClick={() => {}} title="Leyenda">❓</button>
       </header>
 
       {notice && <div className="toast-notice">{notice}</div>}
@@ -340,6 +348,35 @@ const OnlineGameTable = ({ game }) => {
               </button>
             </div>
             <button className="setup-option" onClick={cancelPrompt}>Cancelar</button>
+          </div>
+        </div>
+      )}
+
+      {publicState.roundResult && (
+        <div className="modal-overlay">
+          <div className="modal setup-card round-result-modal">
+            <h2>Resultados de la ronda</h2>
+            <p className="round-winner">Ganador: {publicState.roundResult.winnerName}</p>
+            <table className="round-table">
+              <thead>
+                <tr>
+                  <th>Jugador</th>
+                  <th>Ronda</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(publicState.roundResult.players || []).map((p, i) => (
+                  <tr key={i} className={p.eliminated ? "eliminated" : ""}>
+                    <td>{p.name}</td>
+                    <td>{(publicState.roundResult.deltas?.[i] || 0) > 0 ? `+${publicState.roundResult.deltas[i]}` : (publicState.roundResult.deltas?.[i] || 0)}</td>
+                    <td>{p.points}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="round-countdown">Continuando en 6s…</p>
+            <button className="start-button" onClick={continueRound}>Continuar</button>
           </div>
         </div>
       )}
