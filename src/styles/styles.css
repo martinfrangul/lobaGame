@@ -1,3 +1,4 @@
+html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
 html {
   scroll-behavior: smooth;
 }
@@ -104,7 +105,7 @@ button {
 }
 
 .card .suit {
-  font-size: 16px;
+  font-size: 20px;
   margin-top: -4px;
 }
 
@@ -468,7 +469,7 @@ button:focus-visible {
   position: relative;
   width: 100vw;
   max-width: 1920px;
-  height: 100vh;
+  height: 100dvh;
   height: 100dvh;
   margin: 0 auto;
   display: flex;

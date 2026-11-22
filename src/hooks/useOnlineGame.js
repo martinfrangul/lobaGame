@@ -16,6 +16,22 @@ export function useOnlineGame() {
   const [gameOver, setGameOver] = useState(false);
 
   useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState !== "visible") return;
+      const s = socketRef.current || getSocket();
+      const code = localStorage.getItem("loba_room_code");
+      const token = localStorage.getItem("loba_player_token");
+      if (code && token && !roomRef.current) {
+        s.emit("room:reconnect", { code, token }, (res) => {
+          if (res?.ok) {
+            localStorage.setItem("loba_room_code", res.code);
+            if (res.token) localStorage.setItem("loba_player_token", res.token);
+          }
+        });
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+
     const s = connectSocket();
     socketRef.current = s;
     setConnected(s.connected);
@@ -76,6 +92,7 @@ export function useOnlineGame() {
     }
 
     return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
       s.off("connect", onConnect);
       s.off("disconnect", onDisconnect);
       s.off("room:update", onRoomUpdate);

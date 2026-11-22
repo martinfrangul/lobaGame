@@ -36,12 +36,12 @@ const OnlineGameTable = ({ game }) => {
   const [selectedCards, setSelectedCards] = useState([]);
   const [selectedMeld, setSelectedMeld] = useState(null);
   const [notice, setNotice] = useState(null);
+  const [showLegend, setShowLegend] = useState(false);
   useEffect(() => {
     if (!notice) return;
     const t = setTimeout(() => setNotice(null), 2600);
     return () => clearTimeout(t);
   }, [notice]);
-  const [showLegend, setShowLegend] = useState(false);
 
   if (!publicState) {
     return <div className="game-table setup-screen"><p>Esperando estado...</p></div>;
@@ -208,7 +208,7 @@ const OnlineGameTable = ({ game }) => {
           ))}
         </span>
         <span className="thinking-slot" />
-        <button className="icon-btn" onClick={() => {}} title="Leyenda">❓</button>
+        <button className="icon-btn" onClick={() => setShowLegend(true)} title="Leyenda">❓</button>
       </header>
 
       {notice && <div className="toast-notice">{notice}</div>}
@@ -377,6 +377,25 @@ const OnlineGameTable = ({ game }) => {
             </table>
             <p className="round-countdown">Continuando en 6s…</p>
             <button className="start-button" onClick={continueRound}>Continuar</button>
+          </div>
+        </div>
+      )}
+
+      {showLegend && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>Leyenda de iconos</h3>
+            <ul className="legend-list">
+              <li>🂠 Robar del mazo</li>
+              <li>📥 Robar del pozo</li>
+              <li>➕ Bajar combinación</li>
+              <li>📎 Agregar a combinación</li>
+              <li>💨 Sopar seleccionadas</li>
+              <li>🔄 Sustituir comodín (solo modo móvil)</li>
+              <li>↔️ Reemplazar y mover comodín (solo modo móvil)</li>
+              <li>🗑️ Descartar</li>
+            </ul>
+            <button onClick={() => setShowLegend(false)}>Cerrar</button>
           </div>
         </div>
       )}

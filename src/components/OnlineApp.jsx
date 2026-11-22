@@ -18,7 +18,7 @@ const OnlineApp = ({ onBack }) => {
   if (!game.publicState || !(game.publicState.started || game.room?.started)) {
     return (
       <div>
-        <button className="icon-btn" style={{ position: "fixed", top: 8, right: 8, zIndex: 10 }} onClick={handleBack}>← Menú</button>
+        <button className="icon-btn" style={{ position: "fixed", top: 8, right: 8, zIndex: 10 }} onClick={handleBack} aria-label="Menú">←</button>
         <Lobby game={game} />
         <ConfirmModal
           open={confirmOpen}

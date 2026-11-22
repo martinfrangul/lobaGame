@@ -19,7 +19,7 @@ const App = () => {
             style={{ position: "fixed", top: 8, right: 8, zIndex: 10 }}
             onClick={() => setConfirmOpen(true)}
           >
-            ← Menú
+            ←
           </button>
           <GameTable />
           <ConfirmModal
