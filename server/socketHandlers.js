@@ -49,6 +49,8 @@ function emitState(io, room) {
     discardPile: game.discardPile || [],
     currentTurn: game.currentTurn,
     cardDrawn: !!game.cardDrawn,
+    drawnFromDiscard: !!game.drawnFromDiscard,
+    drawnCardId: game.drawnCardId || null,
     pendingJokers: game.pendingJokers || 0,
     gameOver: !!game.gameOver,
   };
@@ -78,6 +80,8 @@ function createGame(room) {
     discardPile: shared.discardPile,
     currentTurn: shared.currentTurn,
     cardDrawn: false,
+    drawnFromDiscard: false,
+    drawnCardId: null,
     pendingJokers: 0,
     gameOver: false,
     started: true,
@@ -213,12 +217,16 @@ export function registerHandlers(io) {
         game.discardPile = discard;
         game.players[idx].hand = [...game.players[idx].hand, card];
         game.cardDrawn = true;
+        game.drawnFromDiscard = false;
+        game.drawnCardId = null;
       } else if (source === "discardPile") {
         if (!game.discardPile || game.discardPile.length === 0) return fail(socket, "El pozo está vacío");
         const card = game.discardPile[game.discardPile.length - 1];
         game.discardPile = game.discardPile.slice(0, -1);
         game.players[idx].hand = [...game.players[idx].hand, card];
         game.cardDrawn = true;
+        game.drawnFromDiscard = true;
+        game.drawnCardId = card.id;
       } else {
         return fail(socket, "Origen inválido");
       }
@@ -234,6 +242,10 @@ export function registerHandlers(io) {
       if (idx !== game.currentTurn) return fail(socket, "No es tu turno");
       if (!game.cardDrawn) return fail(socket, "Primero debes tomar una carta");
       if ((game.pendingJokers || 0) > 0) return fail(socket, "Debes jugar el comodín recuperado");
+
+      if (game.drawnFromDiscard && (game.players[idx].hand || []).some((c) => c.id === game.drawnCardId)) {
+        return fail(socket, "Debes usar la carta del pozo antes de descartar");
+      }
 
       const cardId = payload?.cardId;
       const player = game.players[idx];
@@ -260,10 +272,14 @@ export function registerHandlers(io) {
           game.currentTurn = round.currentTurn;
           game.cardDrawn = false;
           game.pendingJokers = 0;
+          game.drawnFromDiscard = false;
+          game.drawnCardId = null;
         }
       } else {
         game.cardDrawn = false;
         game.pendingJokers = 0;
+        game.drawnFromDiscard = false;
+        game.drawnCardId = null;
         game.currentTurn = (game.currentTurn + 1) % game.players.length;
       }
       emitState(io, room);
@@ -289,6 +305,10 @@ export function registerHandlers(io) {
         const ids = new Set(cards.map((c) => c.id));
         player.hand = player.hand.filter((c) => !ids.has(c.id));
         player.combinations = [...player.combinations, makeMeld(cards, assignment)];
+        if (game.drawnFromDiscard && !(player.hand || []).some((c) => c.id === game.drawnCardId)) {
+          game.drawnFromDiscard = false;
+          game.drawnCardId = null;
+        }
         emitState(io, room);
         return;
       }
@@ -299,6 +319,10 @@ export function registerHandlers(io) {
         const ids = new Set(cards.map((c) => c.id));
         player.hand = player.hand.filter((c) => !ids.has(c.id));
         player.combinations = [...player.combinations, makeMeld(cards, options[0])];
+        if (game.drawnFromDiscard && !(player.hand || []).some((c) => c.id === game.drawnCardId)) {
+          game.drawnFromDiscard = false;
+          game.drawnCardId = null;
+        }
         emitState(io, room);
         return;
       }
@@ -338,6 +362,10 @@ export function registerHandlers(io) {
         owner.combinations = owner.combinations.map((m, mi) => (mi === meldRef.meldIndex ? updatedMeld : m));
         const ids = new Set(cards.map((c) => c.id));
         player.hand = player.hand.filter((c) => !ids.has(c.id));
+        if (game.drawnFromDiscard && !(player.hand || []).some((c) => c.id === game.drawnCardId)) {
+          game.drawnFromDiscard = false;
+          game.drawnCardId = null;
+        }
       };
 
       if (assignment) {
@@ -392,6 +420,10 @@ export function registerHandlers(io) {
         player.hand = player.hand.filter((c) => c.id !== naturalCard.id);
         player.hand = [...player.hand, jokerCard];
         game.pendingJokers = (game.pendingJokers || 0) + 1;
+        if (game.drawnFromDiscard && !(player.hand || []).some((c) => c.id === game.drawnCardId)) {
+          game.drawnFromDiscard = false;
+          game.drawnCardId = null;
+        }
       };
 
       const assignment = payload?.assignment;
@@ -472,6 +504,10 @@ export function registerHandlers(io) {
         const updatedMeld = makeMeld(newCards, newAssignment);
         owner.combinations = owner.combinations.map((m, mi) => (mi === meldRef.meldIndex ? updatedMeld : m));
         player.hand = player.hand.filter((c) => c.id !== natural.id);
+        if (game.drawnFromDiscard && !(player.hand || []).some((c) => c.id === game.drawnCardId)) {
+          game.drawnFromDiscard = false;
+          game.drawnCardId = null;
+        }
         return true;
       };
 
@@ -518,6 +554,10 @@ export function registerHandlers(io) {
       owner.combinations = owner.combinations.map((m, mi) => (mi === meldRef.meldIndex ? updatedMeld : m));
       const player = game.players[idx];
       player.hand = player.hand.filter((c) => c.id !== natural.id);
+      if (game.drawnFromDiscard && !(player.hand || []).some((c) => c.id === game.drawnCardId)) {
+        game.drawnFromDiscard = false;
+        game.drawnCardId = null;
+      }
       game.pendingMoveChoice = null;
       emitState(io, room);
     });
@@ -539,6 +579,10 @@ export function registerHandlers(io) {
       const ids = new Set(cards.map((c) => c.id));
       game.discardPile = [...(game.discardPile || []), ...cards];
       player.hand = player.hand.filter((c) => !ids.has(c.id));
+      if (game.drawnFromDiscard && !(player.hand || []).some((c) => c.id === game.drawnCardId)) {
+        game.drawnFromDiscard = false;
+        game.drawnCardId = null;
+      }
 
       if (player.hand.length === 0) {
         const result = computeEndRound(game.players, idx, game.config.gameMode);
@@ -580,6 +624,10 @@ export function registerHandlers(io) {
         const ids = new Set(choice.cards.map((c) => c.id));
         player.hand = player.hand.filter((c) => !ids.has(c.id));
         player.combinations = [...player.combinations, makeMeld(choice.cards, assignment)];
+        if (game.drawnFromDiscard && !(player.hand || []).some((c) => c.id === game.drawnCardId)) {
+          game.drawnFromDiscard = false;
+          game.drawnCardId = null;
+        }
       } else if (choice.type === "layoff") {
         const ctx = choice.context || {};
         const meldRef = ctx.meldRef;
@@ -591,6 +639,10 @@ export function registerHandlers(io) {
         const ids = new Set(selected.map((c) => c.id));
         const player = game.players[idx];
         player.hand = player.hand.filter((c) => !ids.has(c.id));
+        if (game.drawnFromDiscard && !(player.hand || []).some((c) => c.id === game.drawnCardId)) {
+          game.drawnFromDiscard = false;
+          game.drawnCardId = null;
+        }
       } else if (choice.type === "substitute") {
         const ctx = choice.context || {};
         const meldRef = ctx.meldRef;
@@ -604,6 +656,10 @@ export function registerHandlers(io) {
         player.hand = player.hand.filter((c) => c.id !== naturalCard.id);
         player.hand = [...player.hand, jokerCard];
         game.pendingJokers = (game.pendingJokers || 0) + 1;
+        if (game.drawnFromDiscard && !(player.hand || []).some((c) => c.id === game.drawnCardId)) {
+          game.drawnFromDiscard = false;
+          game.drawnCardId = null;
+        }
       }
 
       game.pendingChoice = null;

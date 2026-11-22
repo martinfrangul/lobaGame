@@ -34,6 +34,8 @@ const GameTable = () => {
   const [selectedCards, setSelectedCards] = useState([]);
   const [notice, setNotice] = useState(null);
   const [cardDrawn, setCardDrawn] = useState(false);
+  const [drawnFromDiscard, setDrawnFromDiscard] = useState(false);
+  const [drawnCardId, setDrawnCardId] = useState(null);
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [playerCount, setPlayerCount] = useState(2);
@@ -68,6 +70,8 @@ const GameTable = () => {
     setJokerChoice(null);
     setMoveChoice(null);
     setCardDrawn(false);
+    setDrawnFromDiscard(false);
+    setDrawnCardId(null);
     setGameOver(false);
     setGameStarted(true);
   };
@@ -106,6 +110,10 @@ const GameTable = () => {
         };
       })
     );
+    if (drawnFromDiscard && cards.some((c) => c.id === drawnCardId)) {
+      setDrawnFromDiscard(false);
+      setDrawnCardId(null);
+    }
     setSelectedCards([]);
   };
 
@@ -168,6 +176,10 @@ const GameTable = () => {
         return player;
       })
     );
+    if (drawnFromDiscard && selectedCards.some((c) => c.id === drawnCardId)) {
+      setDrawnFromDiscard(false);
+      setDrawnCardId(null);
+    }
     setSelectedCards([]);
     setSelectedMeld(null);
   };
@@ -242,6 +254,10 @@ const GameTable = () => {
 
     if (playerIndex === currentTurn) {
       setPendingJokers((prev) => prev + 1);
+    }
+    if (drawnFromDiscard && selectedCards.some((c) => c.id === drawnCardId)) {
+      setDrawnFromDiscard(false);
+      setDrawnCardId(null);
     }
     setSelectedCards([]);
     setSelectedMeld(null);
@@ -343,6 +359,8 @@ const GameTable = () => {
       );
       setCardDrawn(true);
       setLastDrawnCardId(card.id);
+      setDrawnFromDiscard(false);
+      setDrawnCardId(null);
       return;
     }
 
@@ -364,6 +382,8 @@ const GameTable = () => {
       );
       setCardDrawn(true);
       setLastDrawnCardId(card.id);
+      setDrawnFromDiscard(true);
+      setDrawnCardId(card.id);
     }
   };
 
@@ -409,6 +429,10 @@ const GameTable = () => {
     setSelectedCards([]);
     setSelectedMeld(null);
     setMoveChoice(null);
+    if (drawnFromDiscard && selectedCards.some((c) => c.id === drawnCardId)) {
+      setDrawnFromDiscard(false);
+      setDrawnCardId(null);
+    }
   };
 
   const handleReplaceAndMoveJoker = () => {
@@ -550,6 +574,11 @@ const GameTable = () => {
 
     setSelectedCards([]);
 
+    if (drawnFromDiscard && selectedCards.some((c) => c.id === drawnCardId)) {
+      setDrawnFromDiscard(false);
+      setDrawnCardId(null);
+    }
+
     if (newHand.length === 0) {
       // Se considera que sales en ese momento
       endRound(currentTurn);
@@ -641,13 +670,18 @@ const GameTable = () => {
       return;
     }
 
+    const currentPlayer = players[currentTurn];
+    if (drawnFromDiscard && (currentPlayer.hand || []).some((c) => c.id === drawnCardId)) {
+      setNotice("Debes usar la carta del pozo antes de descartar.");
+      return;
+    }
+
     if (selectedCards.length !== 1) {
       setNotice("Debes seleccionar exactamente una carta para descartar.");
       return;
     }
 
     const cardToDiscard = selectedCards[0];
-    const currentPlayer = players[currentTurn];
     const newHand = currentPlayer.hand.filter(
       (card) => card.id !== cardToDiscard.id
     );
@@ -670,6 +704,8 @@ const GameTable = () => {
     setSelectedMeld(null);
     setPendingJokers(0);
     setLastDrawnCardId(null);
+    setDrawnFromDiscard(false);
+    setDrawnCardId(null);
     setCurrentTurn((currentTurn + 1) % players.length);
   };
 
@@ -701,6 +737,8 @@ const GameTable = () => {
     setJokerChoice(null);
     setMoveChoice(null);
     setCardDrawn(false);
+    setDrawnFromDiscard(false);
+    setDrawnCardId(null);
   };
 
   // --- Simulación de rivales (bots) ---
@@ -1011,7 +1049,7 @@ const GameTable = () => {
               onCardSelect={autoPlayOpponents && currentTurn !== 0 ? undefined : handleCardSelect}
               isFaceDown={false}
               soparableIds={[]}
-              lastDrawnCardId={lastDrawnCardId}
+              lastDrawnCardId={drawnFromDiscard ? drawnCardId : lastDrawnCardId}
               onSort={autoPlayOpponents && currentTurn !== 0 ? undefined : sortHand}
               draggable={!(autoPlayOpponents && currentTurn !== 0)}
               onDragStart={handleDragStart}

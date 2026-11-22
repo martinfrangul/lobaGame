@@ -85,6 +85,10 @@ const OnlineGameTable = ({ game }) => {
       setNotice("Debes jugar el comodín recuperado antes de descartar.");
       return;
     }
+    if (publicState.drawnFromDiscard && privateHand.some((c) => c.id === publicState.drawnCardId)) {
+      setNotice("Debes usar la carta del pozo antes de descartar.");
+      return;
+    }
     if (selectedCards.length !== 1) {
       setNotice("Debes seleccionar exactamente una carta para descartar.");
       return;
@@ -261,7 +265,7 @@ const OnlineGameTable = ({ game }) => {
               onCardSelect={isMyTurn ? handleCardSelect : undefined}
               isFaceDown={false}
               soparableIds={soparableIds}
-              lastDrawnCardId={null}
+              lastDrawnCardId={publicState.drawnFromDiscard ? publicState.drawnCardId : null}
               onSort={isMyTurn ? handleSort : undefined}
               draggable={false}
               onDragStart={() => {}}
