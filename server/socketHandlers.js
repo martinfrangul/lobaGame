@@ -80,7 +80,7 @@ function createGame(room) {
     players,
     deck: shared.deck,
     discardPile: shared.discardPile,
-    currentTurn: shared.currentTurn,
+    currentTurn: Math.floor(Math.random() * players.length),
     cardDrawn: false,
     drawnFromDiscard: false,
     drawnCardId: null,
@@ -711,7 +711,6 @@ export function registerHandlers(io) {
       const game = room.game;
       const idx = playerIndex(game, socket.id);
       if (idx < 0) return fail(socket, "Jugador no encontrado");
-      if (idx !== game.currentTurn) return fail(socket, "No es tu turno");
 
       const mode = payload?.mode;
       const player = game.players[idx];

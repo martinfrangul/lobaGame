@@ -278,7 +278,7 @@ const OnlineGameTable = ({ game }) => {
               isFaceDown={false}
               soparableIds={soparableIds}
               lastDrawnCardId={publicState.drawnFromDiscard ? publicState.drawnCardId : null}
-              onSort={isMyTurn ? handleSort : undefined}
+              onSort={handleSort}
               draggable={false}
               onDragStart={() => {}}
               onDragOver={() => {}}
@@ -287,25 +287,24 @@ const OnlineGameTable = ({ game }) => {
               dragIndex={null}
               dragOverIndex={null}
             />
-            {isMyTurn && (
-              <div className="actions">
-                <button className="icon-btn" onClick={() => handleDraw("deck")} disabled={publicState.cardDrawn} title="Robar del mazo">🂠</button>
-                <button className="icon-btn" onClick={() => handleDraw("discardPile")} disabled={publicState.cardDrawn || (publicState.discardPile?.length || 0) === 0 || !canDrawDiscard} title="Robar del pozo">📥</button>
-                {publicState.drawnFromDiscard && (
-                  <button className="icon-btn" onClick={undoDraw} title="Deshacer robo del pozo">↩</button>
-                )}
-                <button className="icon-btn" onClick={handleDrop} title="Bajar combinación">➕</button>
-                <button className="icon-btn" onClick={handleLayoff} disabled={!selectedMeld} title="Agregar a combinación">📎</button>
-                <button className="icon-btn" onClick={handleSopar} title="Sopar seleccionadas">💨</button>
-                {jokerMode === "mobile" && (
-                  <>
-                    <button className="icon-btn" onClick={handleSubstitute} title="Sustituir comodín">🔄</button>
-                    <button className="icon-btn" onClick={handleMoveJoker} title="Reemplazar y mover comodín">↔️</button>
-                  </>
-                )}
-                <button className="icon-btn" onClick={handleDiscard} title="Descartar">🗑️</button>
-              </div>
-            )}
+            <div className="actions">
+              <button className="icon-btn" onClick={() => handleDraw("deck")} disabled={!isMyTurn || publicState.cardDrawn} title="Robar del mazo">🂠</button>
+              <button className="icon-btn" onClick={() => handleDraw("discardPile")} disabled={!isMyTurn || publicState.cardDrawn || (publicState.discardPile?.length || 0) === 0 || !canDrawDiscard} title="Robar del pozo">📥</button>
+              {publicState.drawnFromDiscard && (
+                <button className="icon-btn" onClick={undoDraw} disabled={!isMyTurn} title="Deshacer robo del pozo">↩</button>
+              )}
+              <button className="icon-btn" onClick={handleDrop} disabled={!isMyTurn} title="Bajar combinación">➕</button>
+              <button className="icon-btn" onClick={handleLayoff} disabled={!isMyTurn || !selectedMeld} title="Agregar a combinación">📎</button>
+              <button className="icon-btn" onClick={handleSopar} disabled={!isMyTurn} title="Sopar seleccionadas">💨</button>
+              {jokerMode === "mobile" && (
+                <>
+                  <button className="icon-btn" onClick={handleSubstitute} disabled={!isMyTurn} title="Sustituir comodín">🔄</button>
+                  <button className="icon-btn" onClick={handleMoveJoker} disabled={!isMyTurn} title="Reemplazar y mover comodín">↔️</button>
+                </>
+              )}
+              <button className="icon-btn" onClick={handleDiscard} disabled={!isMyTurn} title="Descartar">🗑️</button>
+              <button className="icon-btn" onClick={() => sort("suit")} title="Ordenar por palo">♠️</button>
+            </div>
           </>
         )}
       </section>

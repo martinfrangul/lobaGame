@@ -76,7 +76,7 @@ const GameTable = () => {
     setPlayers(result.players);
     setDeck(result.deck);
     setDiscardPile(result.discardPile);
-    setCurrentTurn(result.currentTurn);
+    setCurrentTurn(Math.floor(Math.random() * playerCount));
     setSelectedCards([]);
     setSelectedMeld(null);
     setPendingJokers(0);
@@ -628,7 +628,7 @@ const GameTable = () => {
     setLastDrawnCardId(null);
     setPlayers((prev) =>
       prev.map((player, index) => {
-        if (index !== currentTurn) return player;
+        if (index !== 0) return player;
         const hand = [...player.hand];
         if (mode === "suit") {
           hand.sort((a, b) => {
@@ -1204,7 +1204,7 @@ const GameTable = () => {
               isFaceDown={false}
               soparableIds={[]}
               lastDrawnCardId={drawnFromDiscard ? drawnCardId : null}
-              onSort={autoPlayOpponents && currentTurn !== 0 ? undefined : sortHand}
+              onSort={sortHand}
               draggable={!(autoPlayOpponents && currentTurn !== 0)}
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}
@@ -1213,31 +1213,25 @@ const GameTable = () => {
               dragIndex={dragIndex}
               dragOverIndex={dragOverIndex}
             />
-            {!(autoPlayOpponents && currentTurn !== 0) && (
             <div className="actions">
-              <button className="icon-btn" onClick={() => handleDrawCard("deck")} disabled={cardDrawn} title="Robar del mazo">🂠</button>
-              <button className="icon-btn" onClick={() => handleDrawCard("discardPile")} disabled={cardDrawn || discardPile.length === 0 || !(discardPile.length && canUseDiscardCard(discardPile[discardPile.length - 1], players[currentTurn]?.hand || [], players, jokerMode))} title="Robar del pozo">📥</button>
+              <button className="icon-btn" onClick={() => handleDrawCard("deck")} disabled={cardDrawn || currentTurn !== 0} title="Robar del mazo">🂠</button>
+              <button className="icon-btn" onClick={() => handleDrawCard("discardPile")} disabled={cardDrawn || discardPile.length === 0 || currentTurn !== 0 || !(discardPile.length && canUseDiscardCard(discardPile[discardPile.length - 1], players[currentTurn]?.hand || [], players, jokerMode))} title="Robar del pozo">📥</button>
               {drawnFromDiscard && (
-                <button className="icon-btn" onClick={handleUndoDraw} title="Deshacer robo del pozo">↩</button>
+                <button className="icon-btn" onClick={handleUndoDraw} disabled={currentTurn !== 0} title="Deshacer robo del pozo">↩</button>
               )}
-              {currentTurn !== null && (
+              <button className="icon-btn" onClick={handleDropCombination} disabled={currentTurn !== 0} title="Bajar combinación">➕</button>
+              <button className="icon-btn" onClick={handleLayoff} disabled={currentTurn !== 0 || !selectedMeld} title="Agregar a combinación">📎</button>
+              <button className="icon-btn" onClick={handleSopar} disabled={currentTurn !== 0} title="Sopar seleccionadas">💨</button>
+              {jokerMode === "mobile" && (
                 <>
-                  <button className="icon-btn" onClick={handleDropCombination} title="Bajar combinación">➕</button>
-                  <button className="icon-btn" onClick={handleLayoff} disabled={!selectedMeld} title="Agregar a combinación">📎</button>
-                  <button className="icon-btn" onClick={handleSopar} title="Sopar seleccionadas">💨</button>
-                  {jokerMode === "mobile" && (
-                    <>
-                      <button className="icon-btn" onClick={handleSubstituteJoker} title="Sustituir comodín">🔄</button>
-                      <button className="icon-btn" onClick={handleReplaceAndMoveJoker} title="Reemplazar y mover comodín">↔️</button>
-                    </>
-                  )}
-                  <button className="icon-btn" onClick={handleDiscard} title="Descartar">🗑️</button>
-                  <button className="icon-btn" onClick={handleSimulateRound} title="Simular ronda">🎲</button>
-                  <button className="icon-btn" onClick={() => setShowLegend(true)} title="Leyenda">❓</button>
+                  <button className="icon-btn" onClick={handleSubstituteJoker} disabled={currentTurn !== 0} title="Sustituir comodín">🔄</button>
+                  <button className="icon-btn" onClick={handleReplaceAndMoveJoker} disabled={currentTurn !== 0} title="Reemplazar y mover comodín">↔️</button>
                 </>
               )}
+              <button className="icon-btn" onClick={handleDiscard} disabled={currentTurn !== 0} title="Descartar">🗑️</button>
+              <button className="icon-btn" onClick={handleSimulateRound} title="Simular ronda">🎲</button>
+              <button className="icon-btn" onClick={() => setShowLegend(true)} title="Leyenda">❓</button>
             </div>
-            )}
           </>
         )}
       </section>
