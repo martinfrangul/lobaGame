@@ -50,7 +50,6 @@ const GameTable = () => {
   const [moveChoice, setMoveChoice] = useState(null); // { meldRef, naturalCard, jokerCard, leftRank, rightRank }
   const [showLegend, setShowLegend] = useState(false);
   const [autoPlayOpponents, setAutoPlayOpponents] = useState(false);
-  const [simulateAll, setSimulateAll] = useState(false);
   const [lastDrawnCardId, setLastDrawnCardId] = useState(null);
   const [dragIndex, setDragIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
@@ -795,10 +794,103 @@ const GameTable = () => {
     setDrawnCardId(null);
   };
 
+  const handleSimulateRound = () => {
+    if (gameOver) return;
+
+    let simPlayers = players.map((p) => ({
+      ...p,
+      hand: [...(p.hand || [])],
+      combinations: [...(p.combinations || [])],
+    }));
+    let simDeck = [...deck];
+    let simDiscard = [...discardPile];
+    let simTurn = currentTurn;
+    let roundEnded = false;
+    let winnerIndex = null;
+    let guard = 0;
+
+    while (!roundEnded && guard < 1000) {
+      guard++;
+      if (simPlayers.every((p) => p.eliminated)) break;
+      if (simPlayers[simTurn].eliminated) {
+        simTurn = (simTurn + 1) % simPlayers.length;
+        continue;
+      }
+
+      const player = simPlayers[simTurn];
+
+      // Robar del mazo (reciclar pozo si hace falta)
+      if (simDeck.length === 0) {
+        if (simDiscard.length <= 1) break;
+        const top = simDiscard[simDiscard.length - 1];
+        simDeck = shuffleDeck(simDiscard.slice(0, -1));
+        simDiscard = [top];
+      }
+      if (simDeck.length === 0) break;
+      const drawn = simDeck[simDeck.length - 1];
+      simDeck = simDeck.slice(0, -1);
+      player.hand.push(drawn);
+
+      // Intentar bajar una combinación
+      const combo = findBotCombination(player.hand);
+      if (combo) {
+        const ids = new Set(combo.map((c) => c.id));
+        player.hand = player.hand.filter((c) => !ids.has(c.id));
+        player.combinations = [...player.combinations, { id: `${Date.now()}-${Math.random()}`, cards: orderCards(combo), jokerAssignments: {} }];
+      }
+
+      // Descartar
+      if (player.hand.length === 0) {
+        winnerIndex = simTurn;
+        roundEnded = true;
+        break;
+      }
+      const cardToDiscard = [...player.hand].sort((a, b) => cardValue(b) - cardValue(a))[0];
+      player.hand = player.hand.filter((c) => c.id !== cardToDiscard.id);
+      simDiscard.push(cardToDiscard);
+
+      if (player.hand.length === 0) {
+        winnerIndex = simTurn;
+        roundEnded = true;
+        break;
+      }
+
+      simTurn = (simTurn + 1) % simPlayers.length;
+    }
+
+    if (winnerIndex === null) {
+      setNotice("No se pudo simular la ronda.");
+      return;
+    }
+
+    const result = computeEndRound(simPlayers, winnerIndex, gameMode);
+    setPlayers(result.players);
+
+    if (result.gameOver) {
+      setGameOver(true);
+      if (result.winnerName) setNotice(`¡${result.winnerName} ha ganado la partida!`);
+      return;
+    }
+
+    const deltas = result.players.map((p, i) => p.points - (simPlayers[i]?.points || 0));
+    setRoundResult({
+      winnerIndex,
+      winnerName: simPlayers[winnerIndex]?.name || `Jugador ${winnerIndex + 1}`,
+      players: result.players,
+      deltas,
+    });
+    setRoundCountdown(6);
+    setCurrentTurn(winnerIndex);
+    setCardDrawn(false);
+    setDrawnFromDiscard(false);
+    setDrawnCardId(null);
+    setSelectedCards([]);
+  };
+
   // --- Simulación de rivales (bots) ---
   useEffect(() => {
     if (!gameStarted || !autoPlayOpponents) return;
-    if (currentTurn === 0 && !simulateAll) return; // humano (salvo simulación total)
+    if (currentTurn === 0) return; // humano
     if (gameOver) return;
 
     const timer = setTimeout(() => {
@@ -947,17 +1039,6 @@ const GameTable = () => {
             />
             Simular rivales automáticamente
           </label>
-          <label className="setup-checkbox">
-            <input
-              type="checkbox"
-              checked={simulateAll}
-              onChange={(e) => {
-                setSimulateAll(e.target.checked);
-                if (e.target.checked) setAutoPlayOpponents(true);
-              }}
-            />
-            Simular toda la partida (bot)
-          </label>
           <button className="start-button" onClick={startGame}>
             Iniciar partida
           </button>
@@ -1047,8 +1128,8 @@ const GameTable = () => {
           ))}
         </span>
         <span className="thinking-slot">
-          {(autoPlayOpponents || simulateAll) && (simulateAll || currentTurn !== 0) && (
-            <span className="bot-thinking">Bot pensando…</span>
+          {autoPlayOpponents && currentTurn !== 0 && (
+            <span className="bot-thinking">Rival pensando…</span>
           )}
         </span>
         <button className="icon-btn" onClick={() => setShowLegend(true)} title="Leyenda">❓</button>
@@ -1116,14 +1197,14 @@ const GameTable = () => {
         {players[currentTurn] && (
           <>
             <PlayerHand
-              cards={players[(autoPlayOpponents || simulateAll) && (simulateAll || currentTurn !== 0) ? 0 : currentTurn].hand}
-              selectedCards={(autoPlayOpponents || simulateAll) && (simulateAll || currentTurn !== 0) ? [] : selectedCards}
-              onCardSelect={(autoPlayOpponents || simulateAll) && (simulateAll || currentTurn !== 0) ? undefined : handleCardSelect}
+              cards={players[autoPlayOpponents && currentTurn !== 0 ? 0 : currentTurn].hand}
+              selectedCards={autoPlayOpponents && currentTurn !== 0 ? [] : selectedCards}
+              onCardSelect={autoPlayOpponents && currentTurn !== 0 ? undefined : handleCardSelect}
               isFaceDown={false}
               soparableIds={[]}
               lastDrawnCardId={drawnFromDiscard ? drawnCardId : null}
-              onSort={(autoPlayOpponents || simulateAll) && (simulateAll || currentTurn !== 0) ? undefined : sortHand}
-              draggable={!((autoPlayOpponents || simulateAll) && (simulateAll || currentTurn !== 0))}
+              onSort={autoPlayOpponents && currentTurn !== 0 ? undefined : sortHand}
+              draggable={!(autoPlayOpponents && currentTurn !== 0)}
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
@@ -1131,7 +1212,7 @@ const GameTable = () => {
               dragIndex={dragIndex}
               dragOverIndex={dragOverIndex}
             />
-            {!((autoPlayOpponents || simulateAll) && (simulateAll || currentTurn !== 0)) && (
+            {!(autoPlayOpponents && currentTurn !== 0) && (
             <div className="actions">
               <button className="icon-btn" onClick={() => handleDrawCard("deck")} disabled={cardDrawn} title="Robar del mazo">🂠</button>
               <button className="icon-btn" onClick={() => handleDrawCard("discardPile")} disabled={cardDrawn || discardPile.length === 0 || !(discardPile.length && canUseDiscardCard(discardPile[discardPile.length - 1], players[currentTurn]?.hand || [], players, jokerMode))} title="Robar del pozo">📥</button>
@@ -1150,6 +1231,7 @@ const GameTable = () => {
                     </>
                   )}
                   <button className="icon-btn" onClick={handleDiscard} title="Descartar">🗑️</button>
+                  <button className="icon-btn" onClick={handleSimulateRound} title="Simular ronda">🎲</button>
                   <button className="icon-btn" onClick={() => setShowLegend(true)} title="Leyenda">❓</button>
                 </>
               )}
