@@ -11,6 +11,7 @@ export function useOnlineGame() {
   const [promptMove, setPromptMove] = useState(null);
   const [error, setError] = useState(null);
   const [info, setInfo] = useState(null);
+  const [winner, setWinner] = useState(null);
 
   useEffect(() => {
     const s = connectSocket();
@@ -20,7 +21,8 @@ export function useOnlineGame() {
     const onRoomUpdate = (r) => setRoom(r);
     const onStatePublic = (st) => setPublicState(st);
     const onStatePrivate = (st) => setPrivateHand(st.hand || []);
-    const onGameStarted = () => {};
+    const onGameStarted = () => { setWinner(null); };
+    const onGameOver = (e) => setWinner(e?.winnerName || null);
     const onError = (e) => setError(typeof e === "string" ? e : e?.message || "Error");
     const onInfo = (e) => setInfo(e?.message || String(e));
     const onPromptJoker = (p) => setPromptJoker(p);
@@ -32,6 +34,7 @@ export function useOnlineGame() {
     s.on("state:public", onStatePublic);
     s.on("state:private", onStatePrivate);
     s.on("game:started", onGameStarted);
+    s.on("game:over", onGameOver);
     s.on("error", onError);
     s.on("info", onInfo);
     s.on("prompt:joker", onPromptJoker);
@@ -59,6 +62,7 @@ export function useOnlineGame() {
       s.off("state:public", onStatePublic);
       s.off("state:private", onStatePrivate);
       s.off("game:started", onGameStarted);
+      s.off("game:over", onGameOver);
       s.off("error", onError);
       s.off("info", onInfo);
       s.off("prompt:joker", onPromptJoker);
@@ -114,6 +118,12 @@ export function useOnlineGame() {
     });
   }, [emit]);
 
+  const rematch = useCallback(() => {
+    emit("game:rematch", {}, (res) => {
+      if (!res?.ok) setError(res?.error || "No se pudo reiniciar");
+    });
+  }, [emit]);
+
   const myIndex = publicState?.players
     ? publicState.players.findIndex((p) => p.name === (room?.players?.find((rp) => rp.socketId === getSocket().id)?.name))
     : -1;
@@ -151,6 +161,7 @@ export function useOnlineGame() {
     promptMove,
     error,
     info,
+    winner,
     clearError: () => setError(null),
     clearInfo: () => setInfo(null),
     createRoom,
@@ -169,6 +180,7 @@ export function useOnlineGame() {
     chooseJoker,
     chooseMove,
     sort,
+    rematch,
     cancelPrompt,
   };
 }

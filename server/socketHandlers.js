@@ -249,7 +249,9 @@ export function registerHandlers(io) {
         game.players = result.players;
         if (result.gameOver) {
           game.gameOver = true;
-          io.to(room.code).emit("info", { message: result.winnerName ? `¡${result.winnerName} ha ganado la partida!` : "Juego terminado" });
+          const msg = result.winnerName ? `¡${result.winnerName} ha ganado la partida!` : "Juego terminado";
+          io.to(room.code).emit("info", { message: msg });
+          io.to(room.code).emit("game:over", { winnerName: result.winnerName });
         } else {
           const round = sharedStartNewRound(idx, result.players);
           game.players = round.players;
@@ -533,7 +535,9 @@ export function registerHandlers(io) {
         game.players = result.players;
         if (result.gameOver) {
           game.gameOver = true;
-          io.to(room.code).emit("info", { message: result.winnerName ? `¡${result.winnerName} ha ganado la partida!` : "Juego terminado" });
+          const msg = result.winnerName ? `¡${result.winnerName} ha ganado la partida!` : "Juego terminado";
+          io.to(room.code).emit("info", { message: msg });
+          io.to(room.code).emit("game:over", { winnerName: result.winnerName });
         } else {
           const round = sharedStartNewRound(idx, result.players);
           game.players = round.players;
@@ -626,6 +630,27 @@ export function registerHandlers(io) {
       }
       player.hand = hand;
       emitState(io, room);
+    });
+
+    socket.on("game:rematch", (_payload, cb) => {
+      const room = getRoomBySocket(socket.id);
+      if (!room || !room.game) return fail(socket, "No hay partida activa");
+      if (room.host !== socket.id) return fail(socket, "Solo el anfitrión puede iniciar revancha");
+      if (!room.game.gameOver) return fail(socket, "La partida no ha terminado");
+
+      const connected = room.players.filter((p) => p.connected);
+      if (connected.length < 2) return fail(socket, "Se necesitan al menos 2 jugadores");
+
+      room.players = connected;
+      if (!room.players.some((p) => p.socketId === room.host)) room.host = room.players[0].socketId;
+      room.config.playerCount = room.players.length;
+      room.started = true;
+      room.game = createGame(room);
+
+      io.to(room.code).emit("game:started", { code: room.code });
+      emitState(io, room);
+      emitRoomUpdate(io, room);
+      if (typeof cb === "function") cb({ ok: true });
     });
 
     socket.on("disconnect", () => {

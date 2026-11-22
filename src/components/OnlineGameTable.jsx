@@ -25,6 +25,9 @@ const OnlineGameTable = ({ game }) => {
     cancelPrompt,
     error,
     clearError,
+    winner,
+    rematch,
+    leaveRoom,
   } = game;
 
   const [selectedCards, setSelectedCards] = useState([]);
@@ -318,6 +321,23 @@ const OnlineGameTable = ({ game }) => {
               </button>
             </div>
             <button className="setup-option" onClick={cancelPrompt}>Cancelar</button>
+          </div>
+        </div>
+      )}
+
+      {publicState.gameOver && (
+        <div className="modal-overlay">
+          <div className="modal setup-card">
+            <h2>¡Juego terminado!</h2>
+            <p>{winner ? `¡${winner} ha ganado la partida!` : "Partida finalizada"}</p>
+            {room?.host === socketId ? (
+              <button className="start-button" onClick={rematch}>Jugar de nuevo</button>
+            ) : (
+              <p>Esperando al anfitrión…</p>
+            )}
+            <button className="setup-option" onClick={() => { leaveRoom(); window.location.reload(); }}>
+              Salir a menú
+            </button>
           </div>
         </div>
       )}

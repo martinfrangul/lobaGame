@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: loba-game
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run server
+    envVars:
+      - key: CLIENT_ORIGIN
+        value: "*"
+      - key: NODE_VERSION
+        value: "20"
