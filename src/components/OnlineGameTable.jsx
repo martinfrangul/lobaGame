@@ -27,6 +27,7 @@ const OnlineGameTable = ({ game }) => {
     error,
     clearError,
     winner,
+    gameOver,
     rematch,
     leaveRoom,
   } = game;
@@ -343,7 +344,7 @@ const OnlineGameTable = ({ game }) => {
         </div>
       )}
 
-      {publicState.gameOver && (
+      {(publicState.gameOver || gameOver) && (
         <div className="modal-overlay">
           <div className="modal setup-card">
             <h2>¡Juego terminado!</h2>

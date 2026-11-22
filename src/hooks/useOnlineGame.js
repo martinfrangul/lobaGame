@@ -12,6 +12,7 @@ export function useOnlineGame() {
   const [error, setError] = useState(null);
   const [info, setInfo] = useState(null);
   const [winner, setWinner] = useState(null);
+  const [gameOver, setGameOver] = useState(false);
 
   useEffect(() => {
     const s = connectSocket();
@@ -21,8 +22,8 @@ export function useOnlineGame() {
     const onRoomUpdate = (r) => setRoom(r);
     const onStatePublic = (st) => setPublicState(st);
     const onStatePrivate = (st) => setPrivateHand(st.hand || []);
-    const onGameStarted = () => { setWinner(null); };
-    const onGameOver = (e) => setWinner(e?.winnerName || null);
+    const onGameStarted = () => { setWinner(null); setGameOver(false); };
+    const onGameOver = (e) => { setWinner(e?.winnerName || null); setGameOver(true); };
     const onError = (e) => setError(typeof e === "string" ? e : e?.message || "Error");
     const onInfo = (e) => setInfo(e?.message || String(e));
     const onPromptJoker = (p) => setPromptJoker(p);
@@ -165,6 +166,7 @@ export function useOnlineGame() {
     error,
     info,
     winner,
+    gameOver,
     clearError: () => setError(null),
     clearInfo: () => setInfo(null),
     createRoom,

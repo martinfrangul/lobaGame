@@ -1076,7 +1076,7 @@ const GameTable = () => {
               onCardSelect={autoPlayOpponents && currentTurn !== 0 ? undefined : handleCardSelect}
               isFaceDown={false}
               soparableIds={[]}
-              lastDrawnCardId={drawnFromDiscard ? drawnCardId : lastDrawnCardId}
+              lastDrawnCardId={drawnFromDiscard ? drawnCardId : null}
               onSort={autoPlayOpponents && currentTurn !== 0 ? undefined : sortHand}
               draggable={!(autoPlayOpponents && currentTurn !== 0)}
               onDragStart={handleDragStart}
