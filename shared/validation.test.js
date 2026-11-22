@@ -34,6 +34,34 @@ describe("isValidCombination", () => {
     expect(isValidCombination(cards)).toBe(true);
   });
 
+  it("validates J-Q-K-A as high ace straight", () => {
+    const cards = [
+      { id: 1, rank: "J", suit: "spades" },
+      { id: 2, rank: "Q", suit: "spades" },
+      { id: 3, rank: "K", suit: "spades" },
+      { id: 4, rank: "A", suit: "spades" },
+    ];
+    expect(isValidCombination(cards)).toBe(true);
+  });
+
+  it("validates Q-K-A as high ace straight", () => {
+    const cards = [
+      { id: 1, rank: "Q", suit: "spades" },
+      { id: 2, rank: "K", suit: "spades" },
+      { id: 3, rank: "A", suit: "spades" },
+    ];
+    expect(isValidCombination(cards)).toBe(true);
+  });
+
+  it("rejects K-A-2 wrap-around", () => {
+    const cards = [
+      { id: 1, rank: "K", suit: "spades" },
+      { id: 2, rank: "A", suit: "spades" },
+      { id: 3, rank: "2", suit: "spades" },
+    ];
+    expect(isValidCombination(cards)).toBe(false);
+  });
+
   it("rejects straight with adjacent jokers", () => {
     const cards = [
       { id: 1, rank: "4", suit: "spades" },

@@ -32,6 +32,7 @@ const GameTable = () => {
   } = useGameContext();
 
   const [selectedCards, setSelectedCards] = useState([]);
+  const [notice, setNotice] = useState(null);
   const [cardDrawn, setCardDrawn] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
@@ -47,6 +48,12 @@ const GameTable = () => {
   const [lastDrawnCardId, setLastDrawnCardId] = useState(null);
   const [dragIndex, setDragIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
+
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(null), 2600);
+    return () => clearTimeout(t);
+  }, [notice]);
 
   const startGame = () => {
     const result = sharedStartGame({ playerCount }, deck);
@@ -104,13 +111,13 @@ const GameTable = () => {
 
   const handleDropCombination = () => {
     if (selectedCards.length < 3) {
-      alert("Necesitas al menos 3 cartas para formar una combinación.");
+      setNotice("Necesitas al menos 3 cartas para formar una combinación.");
       return;
     }
 
     const options = possibleAssignmentsForCards(selectedCards, {});
     if (options.length === 0) {
-      alert("Combinación inválida");
+      setNotice("Combinación inválida");
       setSelectedCards([]);
       return;
     }
@@ -167,11 +174,11 @@ const GameTable = () => {
 
   const handleLayoff = () => {
     if (!selectedMeld) {
-      alert("Selecciona una combinación para agregar cartas.");
+      setNotice("Selecciona una combinación para agregar cartas.");
       return;
     }
     if (selectedCards.length === 0) {
-      alert("Selecciona las cartas a agregar.");
+      setNotice("Selecciona las cartas a agregar.");
       return;
     }
 
@@ -189,7 +196,7 @@ const GameTable = () => {
     );
 
     if (options.length === 0) {
-      alert("La combinación resultante no es válida.");
+      setNotice("La combinación resultante no es válida.");
       return;
     }
 
@@ -242,28 +249,28 @@ const GameTable = () => {
 
   const handleSubstituteJoker = () => {
     if (jokerMode === "fixed") {
-      alert("La sustitución de comodín no está disponible en modo fijo.");
+      setNotice("La sustitución de comodín no está disponible en modo fijo.");
       return;
     }
     if (!selectedMeld) {
-      alert("Selecciona una combinación con comodín.");
+      setNotice("Selecciona una combinación con comodín.");
       return;
     }
     if (selectedCards.length !== 1) {
-      alert("Selecciona exactamente una carta natural para sustituir el comodín.");
+      setNotice("Selecciona exactamente una carta natural para sustituir el comodín.");
       return;
     }
 
     const { playerIndex, meldIndex } = selectedMeld;
     if (playerIndex !== currentTurn) {
-      alert("Solo puedes sustituir en tu turno.");
+      setNotice("Solo puedes sustituir en tu turno.");
       return;
     }
 
     const meld = players[playerIndex].combinations[meldIndex];
     const jokerIndex = meld.cards.findIndex((c) => c.rank === "JOKER");
     if (jokerIndex === -1) {
-      alert("La combinación seleccionada no tiene comodín.");
+      setNotice("La combinación seleccionada no tiene comodín.");
       return;
     }
 
@@ -276,7 +283,7 @@ const GameTable = () => {
 
     const options = possibleAssignmentsForCards(newCards, baseAssignment);
     if (options.length === 0) {
-      alert("La sustitución no es válida.");
+      setNotice("La sustitución no es válida.");
       return;
     }
 
@@ -297,7 +304,7 @@ const GameTable = () => {
 
   const handleDrawCard = (source) => {
     if (cardDrawn) {
-      alert("Ya has tomado una carta este turno.");
+      setNotice("Ya has tomado una carta este turno.");
       return;
     }
 
@@ -308,7 +315,7 @@ const GameTable = () => {
       // Reciclar el pozo si el mazo se agotó (se deja la carta superior)
       if (workingDeck.length === 0) {
         if (workingDiscard.length <= 1) {
-          alert("El mazo está vacío.");
+          setNotice("El mazo está vacío.");
           return;
         }
         const topCard = workingDiscard[workingDiscard.length - 1];
@@ -318,7 +325,7 @@ const GameTable = () => {
       }
 
       if (workingDeck.length === 0) {
-        alert("El mazo está vacío.");
+        setNotice("El mazo está vacío.");
         return;
       }
 
@@ -341,7 +348,7 @@ const GameTable = () => {
 
     if (source === "discardPile") {
       if (discardPile.length === 0) {
-        alert("El pozo está vacío.");
+        setNotice("El pozo está vacío.");
         return;
       }
       const card = discardPile[discardPile.length - 1];
@@ -386,7 +393,7 @@ const GameTable = () => {
         newAssignment[jokerCard.id] = chosenRank;
 
         if (!isValidCombination(newCards, newAssignment)) {
-          alert("El movimiento del comodín no es válido.");
+          setNotice("El movimiento del comodín no es válido.");
           return player;
         }
 
@@ -406,21 +413,21 @@ const GameTable = () => {
 
   const handleReplaceAndMoveJoker = () => {
     if (jokerMode === "fixed") {
-      alert("El movimiento de comodín no está disponible en modo fijo.");
+      setNotice("El movimiento de comodín no está disponible en modo fijo.");
       return;
     }
     if (!selectedMeld) {
-      alert("Selecciona una combinación con comodín.");
+      setNotice("Selecciona una combinación con comodín.");
       return;
     }
     if (selectedCards.length !== 1) {
-      alert("Selecciona exactamente una carta natural para reemplazar el comodín.");
+      setNotice("Selecciona exactamente una carta natural para reemplazar el comodín.");
       return;
     }
 
     const { playerIndex, meldIndex } = selectedMeld;
     if (playerIndex !== currentTurn) {
-      alert("Solo puedes mover comodines en tu turno.");
+      setNotice("Solo puedes mover comodines en tu turno.");
       return;
     }
 
@@ -434,12 +441,11 @@ const GameTable = () => {
     );
 
     if (jokerIndex === -1) {
-      alert("No hay un comodín representando esa carta.");
+      setNotice("No hay un comodín representando esa carta.");
       return;
     }
 
     const jokerCard = meld.cards[jokerIndex];
-    const assignedIdx = RANKS.indexOf(natural.rank);
 
     const occupied = new Set();
     meld.cards.forEach((c, i) => {
@@ -451,16 +457,26 @@ const GameTable = () => {
       }
     });
 
-    const leftIdx = assignedIdx - 1;
-    const rightIdx = assignedIdx + 1;
-    const leftRank = leftIdx >= 0 ? RANKS[leftIdx] : null;
-    const rightRank = rightIdx < RANKS.length ? RANKS[rightIdx] : null;
+    let leftRank = null;
+    let rightRank = null;
+    if (natural.rank === "A") {
+      const highPossible = !occupied.has("2");
+      const lowPossible = !occupied.has("K");
+      if (highPossible) leftRank = "K";
+      if (lowPossible) rightRank = "2";
+    } else {
+      const assignedIdx = RANKS.indexOf(natural.rank);
+      const leftIdx = assignedIdx - 1;
+      const rightIdx = assignedIdx + 1;
+      leftRank = leftIdx >= 0 ? RANKS[leftIdx] : null;
+      rightRank = rightIdx < RANKS.length ? RANKS[rightIdx] : null;
+    }
 
     const leftAvailable = !!leftRank && !occupied.has(leftRank);
     const rightAvailable = !!rightRank && !occupied.has(rightRank);
 
     if (!leftAvailable && !rightAvailable) {
-      alert("No hay hueco adyacente para mover el comodín.");
+      setNotice("No hay hueco adyacente para mover el comodín.");
       return;
     }
 
@@ -507,11 +523,11 @@ const GameTable = () => {
 
   const handleSopar = () => {
     if (selectedCards.length === 0) {
-      alert("Selecciona las cartas que quieres sopar.");
+      setNotice("Selecciona las cartas que quieres sopar.");
       return;
     }
     if (!selectedCards.every((c) => isSoparable(c, players))) {
-      alert("Solo se pueden sopar cartas idénticas a una pierna en mesa.");
+      setNotice("Solo se pueden sopar cartas idénticas a una pierna en mesa.");
       return;
     }
 
@@ -616,17 +632,17 @@ const GameTable = () => {
 
   const handleDiscard = () => {
     if (!cardDrawn) {
-      alert("Primero debes tomar una carta.");
+      setNotice("Primero debes tomar una carta.");
       return;
     }
 
     if (pendingJokers > 0) {
-      alert("Debes jugar el comodín recuperado antes de descartar.");
+      setNotice("Debes jugar el comodín recuperado antes de descartar.");
       return;
     }
 
     if (selectedCards.length !== 1) {
-      alert("Debes seleccionar exactamente una carta para descartar.");
+      setNotice("Debes seleccionar exactamente una carta para descartar.");
       return;
     }
 
@@ -664,7 +680,7 @@ const GameTable = () => {
       setPlayers(result.players);
       setGameOver(true);
       if (result.winnerName) {
-        alert(`¡${result.winnerName} ha ganado la partida!`);
+        setNotice(`¡${result.winnerName} ha ganado la partida!`);
       }
       return;
     }
@@ -915,6 +931,7 @@ const GameTable = () => {
 
   return (
     <div className="game-table layout-3-4">
+      {notice && <div className="toast-notice">{notice}</div>}
       {gameOver && <h1>¡Juego terminado!</h1>}
 
       <header className="top-bar">

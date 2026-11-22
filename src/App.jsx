@@ -27,15 +27,26 @@ const App = () => {
   }
 
   return (
-    <div className="game-table setup-screen">
-      <div className="setup-card">
+    <div className="game-table setup-screen welcome-screen">
+      <div className="setup-card welcome-card">
+        <div className="welcome-badge">🃏</div>
         <h1>Loba</h1>
-        <p className="setup-subtitle">Elige modo de juego</p>
-        <div className="setup-section">
-          <button className="start-button" onClick={() => setMode("local")}>Jugar local (hotseat)</button>
+        <p className="setup-subtitle">Juego de cartas para 2-4 jugadores</p>
+        <div className="welcome-actions">
+          <button className="start-button" onClick={() => setMode("local")}>
+            <span>🎮</span> Jugar local (hotseat)
+          </button>
+          <button className="start-button" onClick={() => setMode("online")}>
+            <span>🌐</span> Jugar online
+          </button>
         </div>
-        <div className="setup-section">
-          <button className="start-button" onClick={() => setMode("online")}>Jugar online</button>
+        <div className="welcome-rules">
+          <h3>Reglas rápidas</h3>
+          <ul>
+            <li>Forma piernas (mismo rango) o escaleras (mismo palo).</li>
+            <li>Roba, baja combinaciones, pega y descarta.</li>
+            <li>El primero en quedarse sin cartas gana la ronda.</li>
+          </ul>
         </div>
       </div>
     </div>

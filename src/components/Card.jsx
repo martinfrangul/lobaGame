@@ -9,13 +9,13 @@ const Card = ({ rank, suit, onClick, isSelected, isSoparable, isDrawn }) => {
   };
 
   const suitColors = {
-    hearts: "red",
-    diamonds: "red",
-    clubs: "black",
-    spades: "black",
+    hearts: "#e11d48",
+    diamonds: "#e11d48",
+    clubs: "#111827",
+    spades: "#111827",
   };
 
-  const color = isJoker ? "purple" : suitColors[suit];
+  const color = isJoker ? "#7c3aed" : suitColors[suit] || "#374151";
 
   return (
     <div

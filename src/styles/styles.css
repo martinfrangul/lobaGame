@@ -50,11 +50,11 @@ button {
 
 /* Cartas */
 .card {
-  width: 52px;
-  height: 74px;
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 8px;
+  width: 56px;
+  height: 80px;
+  background: linear-gradient(180deg, #ffffff, #f3f4f6);
+  border: 2px solid var(--card-border);
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -180,7 +180,7 @@ button.selected {
 /* Contador de cartas (rivales) */
 .hand-count {
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: 10px;
   background: rgba(0, 0, 0, 0.35);
   font-size: 14px;
   font-weight: bold;
@@ -352,7 +352,7 @@ button.selected {
 
 .bot-thinking {
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.08);
   font-style: italic;
   color: var(--muted);
@@ -747,7 +747,7 @@ button:disabled {
   background: #1f2d3d;
   color: white;
   padding: 16px;
-  border-radius: 8px;
+  border-radius: 10px;
   max-width: 100%;
 }
 
@@ -1154,4 +1154,30 @@ button:disabled {
     scroll-margin-top: 24px;
     scroll-margin-bottom: 24px;
   }
+}
+/* Welcome screen */
+.welcome-screen { background: radial-gradient(circle at top, #2b4c6f, #0f2438); }
+.welcome-card { max-width: 420px; text-align: center; }
+.welcome-badge { font-size: 48px; margin-bottom: 8px; }
+.welcome-actions { display: flex; flex-direction: column; gap: 10px; margin: 16px 0; }
+.welcome-actions .start-button { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.welcome-rules { text-align: left; margin-top: 12px; }
+.welcome-rules ul { margin: 8px 0 0 18px; }
+.welcome-rules li { margin: 4px 0; font-size: 13px; opacity: 0.9; }
+
+/* Toast notice */
+.toast-notice {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 36, 56, 0.95);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  z-index: 1000;
+  max-width: 90vw;
+  text-align: center;
+  font-size: 14px;
 }

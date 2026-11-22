@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PlayerHand from "./PlayerHand";
 import Card from "./Card";
 import DiscardPile from "./DiscardPile";
@@ -32,6 +32,13 @@ const OnlineGameTable = ({ game }) => {
 
   const [selectedCards, setSelectedCards] = useState([]);
   const [selectedMeld, setSelectedMeld] = useState(null);
+  const [notice, setNotice] = useState(null);
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(null), 2600);
+    return () => clearTimeout(t);
+  }, [notice]);
+  const [showLegend, setShowLegend] = useState(false);
 
   if (!publicState) {
     return <div className="game-table setup-screen"><p>Esperando estado...</p></div>;
@@ -71,15 +78,15 @@ const OnlineGameTable = ({ game }) => {
 
   const handleDiscard = () => {
     if (!publicState.cardDrawn) {
-      alert("Primero debes tomar una carta.");
+      setNotice("Primero debes tomar una carta.");
       return;
     }
     if ((publicState.pendingJokers || 0) > 0) {
-      alert("Debes jugar el comodín recuperado antes de descartar.");
+      setNotice("Debes jugar el comodín recuperado antes de descartar.");
       return;
     }
     if (selectedCards.length !== 1) {
-      alert("Debes seleccionar exactamente una carta para descartar.");
+      setNotice("Debes seleccionar exactamente una carta para descartar.");
       return;
     }
     discard(selectedCards[0].id);
@@ -88,7 +95,7 @@ const OnlineGameTable = ({ game }) => {
 
   const handleDrop = () => {
     if (selectedCards.length < 3) {
-      alert("Necesitas al menos 3 cartas para formar una combinación.");
+      setNotice("Necesitas al menos 3 cartas para formar una combinación.");
       return;
     }
     drop(selectedCards.map((c) => c.id));
@@ -97,11 +104,11 @@ const OnlineGameTable = ({ game }) => {
 
   const handleLayoff = () => {
     if (!selectedMeld) {
-      alert("Selecciona una combinación para agregar cartas.");
+      setNotice("Selecciona una combinación para agregar cartas.");
       return;
     }
     if (selectedCards.length === 0) {
-      alert("Selecciona las cartas a agregar.");
+      setNotice("Selecciona las cartas a agregar.");
       return;
     }
     layoff(selectedCards.map((c) => c.id), selectedMeld, null);
@@ -111,12 +118,12 @@ const OnlineGameTable = ({ game }) => {
 
   const handleSopar = () => {
     if (selectedCards.length === 0) {
-      alert("Selecciona las cartas que quieres sopar.");
+      setNotice("Selecciona las cartas que quieres sopar.");
       return;
     }
     const ok = selectedCards.every((c) => isSoparable(c, players));
     if (!ok) {
-      alert("Solo se pueden sopar cartas idénticas a una pierna en mesa.");
+      setNotice("Solo se pueden sopar cartas idénticas a una pierna en mesa.");
       return;
     }
     sopar(selectedCards.map((c) => c.id));
@@ -125,15 +132,15 @@ const OnlineGameTable = ({ game }) => {
 
   const handleSubstitute = () => {
     if (jokerMode !== "mobile") {
-      alert("La sustitución de comodín no está disponible en modo fijo.");
+      setNotice("La sustitución de comodín no está disponible en modo fijo.");
       return;
     }
     if (!selectedMeld) {
-      alert("Selecciona una combinación con comodín.");
+      setNotice("Selecciona una combinación con comodín.");
       return;
     }
     if (selectedCards.length !== 1) {
-      alert("Selecciona exactamente una carta natural para sustituir el comodín.");
+      setNotice("Selecciona exactamente una carta natural para sustituir el comodín.");
       return;
     }
     substitute(selectedCards[0].id, selectedMeld, null);
@@ -143,15 +150,15 @@ const OnlineGameTable = ({ game }) => {
 
   const handleMoveJoker = () => {
     if (jokerMode !== "mobile") {
-      alert("El movimiento de comodín no está disponible en modo fijo.");
+      setNotice("El movimiento de comodín no está disponible en modo fijo.");
       return;
     }
     if (!selectedMeld) {
-      alert("Selecciona una combinación con comodín.");
+      setNotice("Selecciona una combinación con comodín.");
       return;
     }
     if (selectedCards.length !== 1) {
-      alert("Selecciona exactamente una carta natural para reemplazar el comodín.");
+      setNotice("Selecciona exactamente una carta natural para reemplazar el comodín.");
       return;
     }
     moveJoker(selectedCards[0].id, selectedMeld);
@@ -185,9 +192,10 @@ const OnlineGameTable = ({ game }) => {
       <header className="top-bar">
         <span className="turn-indicator">Turno: {players[currentTurn]?.name}</span>
         <span className="thinking-slot" />
-        <button className="icon-btn" onClick={() => {}} title="Leyenda">❓</button>
+        <button className="icon-btn" onClick={() => setShowLegend(true)} title="Leyenda">❓</button>
       </header>
 
+      {notice && <div className="toast-notice">{notice}</div>}
       <div className="center-area">
         <div className="deck-row">
           <span className="deck-label">Mazo</span>
@@ -338,6 +346,25 @@ const OnlineGameTable = ({ game }) => {
             <button className="setup-option" onClick={() => { leaveRoom(); window.location.reload(); }}>
               Salir a menú
             </button>
+          </div>
+        </div>
+      )}
+
+      {showLegend && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>Leyenda de iconos</h3>
+            <ul className="legend-list">
+              <li>🂠 Robar del mazo</li>
+              <li>📥 Robar del pozo</li>
+              <li>➕ Bajar combinación</li>
+              <li>📎 Agregar a combinación</li>
+              <li>💨 Sopar seleccionadas</li>
+              <li>🔄 Sustituir comodín (solo modo móvil)</li>
+              <li>↔️ Reemplazar y mover comodín (solo modo móvil)</li>
+              <li>🗑️ Descartar</li>
+            </ul>
+            <button onClick={() => setShowLegend(false)}>Cerrar</button>
           </div>
         </div>
       )}

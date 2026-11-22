@@ -59,7 +59,7 @@ const PlayerHand = ({
 
   return (
     <div className="hand-wrapper">
-      {draggable && onSort && (
+      {onSort && (
         <div className="hand-toolbar">
           <button className="icon-btn" onClick={() => onSort("suit")} title="Ordenar por palo">
             ♠️

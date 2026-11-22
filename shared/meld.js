@@ -1,4 +1,5 @@
-import { suitOrder } from "./cards.js";
+import { suitOrder, RANK_ORDER_MAP } from "./cards.js";
+import { straightValid } from "./validation.js";
 
 export const orderCards = (cards, assignment = {}) => {
   const rankOrder = {
@@ -30,15 +31,22 @@ export const orderCards = (cards, assignment = {}) => {
     return result;
   }
 
+  // Determinar si el As actúa como carta alta (Q-K-A) en esta escalera.
+  const lowValid = straightValid(cards, assignment, false);
+  const highValid = straightValid(cards, assignment, true);
+  const aceHigh = highValid && !lowValid;
+
   const rankOf = (card) => {
     if (card.rank === "JOKER") {
       const assigned = assignment[card.id];
-      if (assigned && rankOrder[assigned]) {
-        return rankOrder[assigned];
+      if (assigned) {
+        if (assigned === "A") return aceHigh ? 14 : 1;
+        return rankOrder[assigned] ?? RANK_ORDER_MAP[assigned] ?? 99;
       }
       return 99; // sin asignación fija, va al final
     }
-    return rankOrder[card.rank] ?? 99;
+    if (card.rank === "A") return aceHigh ? 14 : 1;
+    return rankOrder[card.rank] ?? RANK_ORDER_MAP[card.rank] ?? 99;
   };
 
   return [...cards].sort((a, b) => rankOf(a) - rankOf(b));

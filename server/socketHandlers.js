@@ -435,17 +435,27 @@ export function registerHandlers(io) {
       if (jokerIndex === -1) return fail(socket, "No hay un comodín representando esa carta");
 
       const jokerCard = meld.cards[jokerIndex];
-      const assignedIdx = RANKS.indexOf(natural.rank);
       const occupied = new Set();
       meld.cards.forEach((c, i) => {
         if (i === jokerIndex) return;
         if (c.rank === "JOKER") occupied.add((meld.jokerAssignments || {})[c.id]);
         else occupied.add(c.rank);
       });
-      const leftIdx = assignedIdx - 1;
-      const rightIdx = assignedIdx + 1;
-      const leftRank = leftIdx >= 0 ? RANKS[leftIdx] : null;
-      const rightRank = rightIdx < RANKS.length ? RANKS[rightIdx] : null;
+
+      let leftRank = null;
+      let rightRank = null;
+      if (natural.rank === "A") {
+        const highPossible = !occupied.has("2");
+        const lowPossible = !occupied.has("K");
+        if (highPossible) leftRank = "K";
+        if (lowPossible) rightRank = "2";
+      } else {
+        const assignedIdx = RANKS.indexOf(natural.rank);
+        const leftIdx = assignedIdx - 1;
+        const rightIdx = assignedIdx + 1;
+        leftRank = leftIdx >= 0 ? RANKS[leftIdx] : null;
+        rightRank = rightIdx < RANKS.length ? RANKS[rightIdx] : null;
+      }
       const leftAvailable = !!leftRank && !occupied.has(leftRank);
       const rightAvailable = !!rightRank && !occupied.has(rightRank);
 
