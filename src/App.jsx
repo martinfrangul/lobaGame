@@ -6,11 +6,22 @@ import OnlineApp from "./components/OnlineApp";
 const App = () => {
   const [mode, setMode] = useState(null);
 
+  const goMenu = () => setMode(null);
+
   if (mode === "local") {
     return (
       <GameProvider>
         <div>
-          <button className="icon-btn" style={{ position: "fixed", top: 8, right: 8, zIndex: 10 }} onClick={() => setMode(null)}>← Menú</button>
+          <button
+            className="icon-btn"
+            style={{ position: "fixed", top: 8, right: 8, zIndex: 10 }}
+            onClick={() => {
+              if (!window.confirm("¿Seguro que quieres cancelar la partida? Se perderá todo el progreso.")) return;
+              goMenu();
+            }}
+          >
+            ← Menú
+          </button>
           <GameTable />
         </div>
       </GameProvider>
@@ -18,35 +29,19 @@ const App = () => {
   }
 
   if (mode === "online") {
-    return (
-      <div>
-        <button className="icon-btn" style={{ position: "fixed", top: 8, right: 8, zIndex: 10 }} onClick={() => setMode(null)}>← Menú</button>
-        <OnlineApp />
-      </div>
-    );
+    return <OnlineApp onBack={goMenu} />;
   }
 
   return (
-    <div className="game-table setup-screen welcome-screen">
-      <div className="setup-card welcome-card">
-        <div className="welcome-badge">🃏</div>
+    <div className="game-table setup-screen">
+      <div className="setup-card">
         <h1>Loba</h1>
-        <p className="setup-subtitle">Juego de cartas para 2-4 jugadores</p>
-        <div className="welcome-actions">
-          <button className="start-button" onClick={() => setMode("local")}>
-            <span>🎮</span> Jugar local (hotseat)
-          </button>
-          <button className="start-button" onClick={() => setMode("online")}>
-            <span>🌐</span> Jugar online
-          </button>
+        <p className="setup-subtitle">Elige modo de juego</p>
+        <div className="setup-section">
+          <button className="start-button" onClick={() => setMode("local")}>Jugar local (hotseat)</button>
         </div>
-        <div className="welcome-rules">
-          <h3>Reglas rápidas</h3>
-          <ul>
-            <li>Forma piernas (mismo rango) o escaleras (mismo palo).</li>
-            <li>Roba, baja combinaciones, pega y descarta.</li>
-            <li>El primero en quedarse sin cartas gana la ronda.</li>
-          </ul>
+        <div className="setup-section">
+          <button className="start-button" onClick={() => setMode("online")}>Jugar online</button>
         </div>
       </div>
     </div>

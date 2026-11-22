@@ -18,6 +18,7 @@ export function useOnlineGame() {
   useEffect(() => {
     const s = connectSocket();
     socketRef.current = s;
+    setConnected(s.connected);
     const onConnect = () => {
       setConnected(true);
       const code = localStorage.getItem("loba_room_code");
@@ -61,7 +62,7 @@ export function useOnlineGame() {
 
     const code = localStorage.getItem("loba_room_code");
     const token = localStorage.getItem("loba_player_token");
-    if (code && token) {
+    if (code && token && s.connected) {
       s.emit("room:reconnect", { code, token }, (res) => {
         if (!res?.ok) {
           localStorage.removeItem("loba_room_code");
