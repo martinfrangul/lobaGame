@@ -212,6 +212,49 @@ export const isSoparable = (card, players) => {
   );
 };
 
+export const canUseDiscardCard = (card, hand, players, jokerMode = "fixed") => {
+  if (!card) return false;
+  const h = Array.isArray(hand) ? hand : [];
+  const allowReassign = jokerMode === "mobile";
+  const others = h.filter((c) => c.id !== card.id);
+
+  // 1) Bajada nueva (drop): la carta + 2+ de la mano forman combinación válida
+  const n = others.length;
+  for (let size = 2; size <= n; size++) {
+    const combo = [];
+    let found = false;
+    const rec = (start) => {
+      if (found) return;
+      if (combo.length === size) {
+        const cards = [card, ...combo];
+        if (possibleAssignmentsForCards(cards, {}).length > 0) found = true;
+        return;
+      }
+      for (let i = start; i < n; i++) {
+        combo.push(others[i]);
+        rec(i + 1);
+        combo.pop();
+        if (found) return;
+      }
+    };
+    rec(0);
+    if (found) return true;
+  }
+
+  // 2) Pegado (layoff) a una combinación existente
+  for (const player of players || []) {
+    for (const meld of player.combinations || []) {
+      const newCards = [...(meld.cards || []), card];
+      const baseAssignment = allowReassign ? {} : { ...(meld.jokerAssignments || {}) };
+      if (possibleAssignmentsForCards(newCards, baseAssignment).length > 0) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+};
+
 export const isAceHighContext = (cards, assignment = {}) => {
   const ranks = new Set();
   (cards || []).forEach((c) => {

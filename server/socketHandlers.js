@@ -5,6 +5,7 @@ import {
   isValidCombination,
   possibleAssignmentsForCards,
   isSoparable,
+  canUseDiscardCard,
   makeMeld,
   shuffleDeck,
   RANKS,
@@ -222,6 +223,9 @@ export function registerHandlers(io) {
       } else if (source === "discardPile") {
         if (!game.discardPile || game.discardPile.length === 0) return fail(socket, "El pozo está vacío");
         const card = game.discardPile[game.discardPile.length - 1];
+        if (!canUseDiscardCard(card, game.players[idx].hand || [], game.players, game.config.jokerMode)) {
+          return fail(socket, "No hay jugada posible con esa carta");
+        }
         game.discardPile = game.discardPile.slice(0, -1);
         game.players[idx].hand = [...game.players[idx].hand, card];
         game.cardDrawn = true;
@@ -716,6 +720,28 @@ export function registerHandlers(io) {
       io.to(room.code).emit("game:started", { code: room.code });
       emitState(io, room);
       emitRoomUpdate(io, room);
+      if (typeof cb === "function") cb({ ok: true });
+    });
+
+    socket.on("action:undoDraw", (_payload, cb) => {
+      const room = getRoomBySocket(socket.id);
+      if (!room || !room.game) return fail(socket, "No hay partida activa");
+      const game = room.game;
+      const idx = playerIndex(game, socket.id);
+      if (idx < 0) return fail(socket, "Jugador no encontrado");
+      if (idx !== game.currentTurn) return fail(socket, "No es tu turno");
+      if (!game.cardDrawn || !game.drawnFromDiscard) return fail(socket, "No hay robo que deshacer");
+
+      const player = game.players[idx];
+      const card = player.hand.find((c) => c.id === game.drawnCardId);
+      if (!card) return fail(socket, "La carta ya no está en tu mano");
+
+      player.hand = player.hand.filter((c) => c.id !== game.drawnCardId);
+      game.discardPile = [...(game.discardPile || []), card];
+      game.cardDrawn = false;
+      game.drawnFromDiscard = false;
+      game.drawnCardId = null;
+      emitState(io, room);
       if (typeof cb === "function") cb({ ok: true });
     });
 

@@ -130,6 +130,9 @@ export function useOnlineGame() {
 
   // actions
   const draw = useCallback((source) => emit("action:draw", { source }), [emit]);
+  const undoDraw = useCallback(() => emit("action:undoDraw", {}, (res) => {
+    if (!res?.ok) setError(res?.error || "No se pudo deshacer");
+  }), [emit]);
   const discard = useCallback((cardId) => emit("action:discard", { cardId }), [emit]);
   const drop = useCallback((cardIds, assignment) => emit("action:drop", { cardIds, assignment }), [emit]);
   const layoff = useCallback((cardIds, meldRef, assignment) => emit("action:layoff", { cardIds, meldRef, assignment }), [emit]);
@@ -171,6 +174,7 @@ export function useOnlineGame() {
     startGame,
     myIndex,
     draw,
+    undoDraw,
     discard,
     drop,
     layoff,

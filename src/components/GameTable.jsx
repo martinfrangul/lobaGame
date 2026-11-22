@@ -5,6 +5,7 @@ import DiscardPile from "./DiscardPile";
 import { useGameContext } from "../context/gameState";
 import {
   isValidCombination,
+  canUseDiscardCard,
   RANKS,
   RANK_ORDER_MAP,
   cardValue,
@@ -385,6 +386,32 @@ const GameTable = () => {
       setDrawnFromDiscard(true);
       setDrawnCardId(card.id);
     }
+  };
+
+  const handleUndoDraw = () => {
+    if (!cardDrawn || !drawnFromDiscard) {
+      setNotice("No hay robo que deshacer.");
+      return;
+    }
+    const currentPlayer = players[currentTurn];
+    const card = (currentPlayer.hand || []).find((c) => c.id === drawnCardId);
+    if (!card) {
+      setNotice("La carta ya no está en tu mano.");
+      return;
+    }
+    setPlayers((prev) =>
+      prev.map((player, index) =>
+        index === currentTurn
+          ? { ...player, hand: player.hand.filter((c) => c.id !== drawnCardId) }
+          : player
+      )
+    );
+    setDiscardPile((prev) => [...prev, card]);
+    setCardDrawn(false);
+    setDrawnFromDiscard(false);
+    setDrawnCardId(null);
+    setLastDrawnCardId(null);
+    setNotice("Robo deshecho.");
   };
 
   const finalizeMoveJoker = (meldRef, naturalCard, jokerCard, chosenRank) => {
@@ -1062,7 +1089,10 @@ const GameTable = () => {
             {!(autoPlayOpponents && currentTurn !== 0) && (
             <div className="actions">
               <button className="icon-btn" onClick={() => handleDrawCard("deck")} disabled={cardDrawn} title="Robar del mazo">🂠</button>
-              <button className="icon-btn" onClick={() => handleDrawCard("discardPile")} disabled={cardDrawn || discardPile.length === 0} title="Robar del pozo">📥</button>
+              <button className="icon-btn" onClick={() => handleDrawCard("discardPile")} disabled={cardDrawn || discardPile.length === 0 || !(discardPile.length && canUseDiscardCard(discardPile[discardPile.length - 1], players[currentTurn]?.hand || [], players, jokerMode))} title="Robar del pozo">📥</button>
+              {drawnFromDiscard && (
+                <button className="icon-btn" onClick={handleUndoDraw} title="Deshacer robo del pozo">↩</button>
+              )}
               {currentTurn !== null && (
                 <>
                   <button className="icon-btn" onClick={handleDropCombination} title="Bajar combinación">➕</button>

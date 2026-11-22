@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import PlayerHand from "./PlayerHand";
 import Card from "./Card";
 import DiscardPile from "./DiscardPile";
-import { isSoparable } from "@shared";
+import { isSoparable, canUseDiscardCard } from "@shared";
 
 const OnlineGameTable = ({ game }) => {
   const {
@@ -11,6 +11,7 @@ const OnlineGameTable = ({ game }) => {
     room,
     socketId,
     draw,
+    undoDraw,
     discard,
     drop,
     layoff,
@@ -50,6 +51,8 @@ const OnlineGameTable = ({ game }) => {
   const me = myIndex >= 0 ? players[myIndex] : null;
   const currentTurn = publicState.currentTurn;
   const jokerMode = publicState.config?.jokerMode || "fixed";
+  const topDiscard = publicState.discardPile?.[publicState.discardPile.length - 1];
+  const canDrawDiscard = topDiscard ? canUseDiscardCard(topDiscard, privateHand, players, jokerMode) : false;
 
   const handleCardSelect = (card) => {
     setSelectedCards((prev) =>
@@ -278,7 +281,10 @@ const OnlineGameTable = ({ game }) => {
             {isMyTurn && (
               <div className="actions">
                 <button className="icon-btn" onClick={() => handleDraw("deck")} disabled={publicState.cardDrawn} title="Robar del mazo">🂠</button>
-                <button className="icon-btn" onClick={() => handleDraw("discardPile")} disabled={publicState.cardDrawn || (publicState.discardPile?.length || 0) === 0} title="Robar del pozo">📥</button>
+                <button className="icon-btn" onClick={() => handleDraw("discardPile")} disabled={publicState.cardDrawn || (publicState.discardPile?.length || 0) === 0 || !canDrawDiscard} title="Robar del pozo">📥</button>
+                {publicState.drawnFromDiscard && (
+                  <button className="icon-btn" onClick={undoDraw} title="Deshacer robo del pozo">↩</button>
+                )}
                 <button className="icon-btn" onClick={handleDrop} title="Bajar combinación">➕</button>
                 <button className="icon-btn" onClick={handleLayoff} disabled={!selectedMeld} title="Agregar a combinación">📎</button>
                 <button className="icon-btn" onClick={handleSopar} title="Sopar seleccionadas">💨</button>
