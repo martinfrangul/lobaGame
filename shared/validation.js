@@ -104,7 +104,8 @@ export const isValidCombination = (cards, assignment = {}) => {
   // Pierna (grupo): solo cartas naturales, mismo rango, palos distintos.
   const isGroup = (() => {
     if (jokers.length > 0) return false;
-    if (naturals.length < 3) return false;
+    // En esta variante, una pierna tiene como máximo 3 cartas
+    if (naturals.length !== 3) return false;
 
     const allSameRank = naturals.every(
       (card) => card.rank === naturals[0].rank
