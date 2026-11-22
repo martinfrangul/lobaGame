@@ -892,6 +892,7 @@ const GameTable = () => {
     if (!gameStarted || !autoPlayOpponents) return;
     if (currentTurn === 0) return; // humano
     if (gameOver) return;
+    if (roundResult) return; // no jugar mientras hay modal de resultados
 
     const timer = setTimeout(() => {
       // 1) Robar
@@ -971,7 +972,7 @@ const GameTable = () => {
     }, 800);
 
     return () => clearTimeout(timer);
-  }, [currentTurn, autoPlayOpponents, gameStarted, gameOver]);
+  }, [currentTurn, autoPlayOpponents, gameStarted, gameOver, roundResult]);
 
   if (!gameStarted) {
     return (
