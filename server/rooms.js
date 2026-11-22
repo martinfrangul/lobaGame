@@ -93,23 +93,8 @@ export function leaveRoom(socketId) {
     const p = room.players.find((x) => x.socketId === socketId);
     if (p) p.connected = false;
     socketToRoom.delete(socketId);
-    // advance turn if current player disconnected
-    if (room.game) {
-      const idx = room.game.players.findIndex((gp) => gp.socketId === socketId);
-      if (idx >= 0 && idx === room.game.currentTurn) {
-        // find next connected player
-        const total = room.game.players.length;
-        let next = (idx + 1) % total;
-        let guard = 0;
-        while (!room.game.players[next].connected && guard < total) {
-          next = (next + 1) % total;
-          guard++;
-        }
-        room.game.currentTurn = next;
-        room.game.cardDrawn = false;
-      }
-    }
-    return { room, disconnected: true };
+      // No avanzar turno automáticamente: se preserva el estado para reconexión.
+      return { room, disconnected: true };
   }
 
   room.players = room.players.filter((p) => p.socketId !== socketId);

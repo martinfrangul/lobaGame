@@ -3,6 +3,7 @@ import { connectSocket, getSocket } from "../lib/socket";
 
 export function useOnlineGame() {
   const socketRef = useRef(null);
+  const roomRef = useRef(null);
   const [connected, setConnected] = useState(false);
   const [room, setRoom] = useState(null);
   const [publicState, setPublicState] = useState(null);
@@ -17,9 +18,26 @@ export function useOnlineGame() {
   useEffect(() => {
     const s = connectSocket();
     socketRef.current = s;
-    const onConnect = () => setConnected(true);
+    const onConnect = () => {
+      setConnected(true);
+      const code = localStorage.getItem("loba_room_code");
+      const token = localStorage.getItem("loba_player_token");
+      if (code && token && !roomRef.current) {
+        const s = socketRef.current || getSocket();
+        s.emit("room:reconnect", { code, token }, (res) => {
+          if (!res?.ok) {
+            localStorage.removeItem("loba_room_code");
+            localStorage.removeItem("loba_player_token");
+            setError(res?.error || "Reconexión fallida");
+          } else {
+            localStorage.setItem("loba_room_code", res.code);
+            if (res.token) localStorage.setItem("loba_player_token", res.token);
+          }
+        });
+      }
+    };
     const onDisconnect = () => setConnected(false);
-    const onRoomUpdate = (r) => setRoom(r);
+    const onRoomUpdate = (r) => { roomRef.current = r; setRoom(r); };
     const onStatePublic = (st) => setPublicState(st);
     const onStatePrivate = (st) => setPrivateHand(st.hand || []);
     const onGameStarted = () => { setWinner(null); setGameOver(false); };
