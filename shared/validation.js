@@ -1,9 +1,4 @@
-const RANK_ORDER = [
-  "A", "2", "3", "4", "5", "6", "7", "8", "9", "10",
-  "J", "Q", "K",
-];
-
-const rankIndex = (rank) => RANK_ORDER.indexOf(rank);
+import { RANK_ORDER, RANKS, rankIndex } from "./cards.js";
 
 export const isValidCombination = (cards, assignment = {}) => {
   if (!Array.isArray(cards) || cards.length < 3) {
@@ -83,15 +78,12 @@ export const isValidCombination = (cards, assignment = {}) => {
     }
 
     // Validación flexible con comodines restantes.
-    // Regla: no puede haber 2+ comodines seguidos.
-    // Por tanto, cada hueco interno acepta como máximo 1 comodín.
     let jokerCount = remainingJokers.length;
 
     for (let i = 1; i < sorted.length; i++) {
       const gap = rankIndex(sorted[i].rank) - rankIndex(sorted[i - 1].rank) - 1;
       if (gap < 0) return false;
       if (gap > 1) {
-        // Necesitaría comodines adyacentes: inválido
         return false;
       }
       if (gap === 1) {
@@ -100,7 +92,6 @@ export const isValidCombination = (cards, assignment = {}) => {
       }
     }
 
-    // Comodines restantes van a los extremos, máximo 1 por extremo
     const firstIdx = rankIndex(sorted[0].rank);
     const lastIdx = rankIndex(sorted[sorted.length - 1].rank);
     const leftAvailable = firstIdx > 0 ? 1 : 0;
@@ -150,4 +141,58 @@ export const possibleJokerAssignments = (cards) => {
   return unique;
 };
 
-export const RANKS = RANK_ORDER;
+export const possibleAssignmentsForCards = (cards, baseAssignment = {}) => {
+  const freeJokers = cards.filter(
+    (c) => c.rank === "JOKER" && !Object.prototype.hasOwnProperty.call(baseAssignment, c.id)
+  );
+
+  const results = [];
+  const tryAssign = (index, current) => {
+    if (index === freeJokers.length) {
+      const full = { ...baseAssignment, ...current };
+      if (isValidCombination(cards, full)) {
+        results.push(full);
+      }
+      return;
+    }
+    for (const rank of RANKS) {
+      current[freeJokers[index].id] = rank;
+      tryAssign(index + 1, current);
+    }
+    delete current[freeJokers[index].id];
+  };
+
+  if (freeJokers.length === 0) {
+    if (isValidCombination(cards, baseAssignment)) {
+      return [baseAssignment];
+    }
+    return [];
+  }
+
+  tryAssign(0, {});
+
+  const unique = [];
+  const seen = new Set();
+  for (const r of results) {
+    const key = freeJokers.map((j) => r[j.id]).join(",");
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(r);
+    }
+  }
+  return unique;
+};
+
+export const isSoparable = (card, players) => {
+  return (players || []).some((player) =>
+    (player.combinations || []).some((meld) => {
+      const cards = meld.cards || [];
+      const isGroup =
+        cards.length >= 3 &&
+        cards.every((c) => c.rank === cards[0].rank) &&
+        !cards.some((c) => c.rank === "JOKER");
+      if (!isGroup) return false;
+      return cards.some((c) => c.rank === card.rank && c.suit === card.suit);
+    })
+  );
+};

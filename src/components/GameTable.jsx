@@ -3,8 +3,21 @@ import PlayerHand from "./PlayerHand";
 import Card from "./Card";
 import DiscardPile from "./DiscardPile";
 import { useGameContext } from "../context/gameState";
-import { isValidCombination, possibleJokerAssignments, RANKS } from "../utils/gameUtils";
-import { generateDeck, shuffleDeck } from "../utils/deck";
+import {
+  isValidCombination,
+  RANKS,
+  RANK_ORDER_MAP,
+  cardValue,
+  orderCards,
+  makeMeld,
+  possibleAssignmentsForCards,
+  isSoparable,
+  startGame as sharedStartGame,
+  startNewRound as sharedStartNewRound,
+  computeEndRound,
+  findBotCombination,
+  shuffleDeck,
+} from "@shared";
 
 const GameTable = () => {
   const {
@@ -17,13 +30,6 @@ const GameTable = () => {
     currentTurn,
     setCurrentTurn,
   } = useGameContext();
-
-  const cardValue = (card) => {
-    if (card.rank === "JOKER") return 25;
-    if (card.rank === "A") return 15;
-    if (["J", "Q", "K"].includes(card.rank)) return 10;
-    return Number(card.rank) || 0;
-  };
 
   const [selectedCards, setSelectedCards] = useState([]);
   const [cardDrawn, setCardDrawn] = useState(false);
@@ -43,23 +49,12 @@ const GameTable = () => {
   const [dragOverIndex, setDragOverIndex] = useState(null);
 
   const startGame = () => {
-    const tempDeck = [...deck];
-    const newPlayers = Array.from({ length: playerCount }, (_, index) => ({
-      name: `Jugador ${index + 1}`,
-      hand: tempDeck.splice(0, 9),
-      points: 0,
-      combinations: [],
-      eliminated: false,
-      reenganches: 0,
-    }));
-    const firstDiscard = tempDeck.length > 0 ? tempDeck.splice(0, 1)[0] : null;
+    const result = sharedStartGame({ playerCount }, deck);
 
-    setPlayers(newPlayers);
-    setDeck(tempDeck);
-    if (firstDiscard) {
-      setDiscardPile([firstDiscard]);
-    }
-    setCurrentTurn(0);
+    setPlayers(result.players);
+    setDeck(result.deck);
+    setDiscardPile(result.discardPile);
+    setCurrentTurn(result.currentTurn);
     setSelectedCards([]);
     setSelectedMeld(null);
     setPendingJokers(0);
@@ -79,63 +74,6 @@ const GameTable = () => {
     );
   };
   
-  const orderCards = (cards, assignment = {}) => {
-    const rankOrder = {
-      A: 1,
-      2: 2,
-      3: 3,
-      4: 4,
-      5: 5,
-      6: 6,
-      7: 7,
-      8: 8,
-      9: 9,
-      10: 10,
-      J: 11,
-      Q: 12,
-      K: 13,
-    };
-
-    const suitOrder = { clubs: 1, diamonds: 2, hearts: 3, spades: 4 };
-
-    // Pierna (mismo rango, sin comodines): orden por color alternado
-    const isGroup =
-      cards.length >= 3 &&
-      cards.every((c) => c.rank === cards[0].rank) &&
-      !cards.some((c) => c.rank === "JOKER");
-
-    if (isGroup) {
-      const reds = cards
-        .filter((c) => c.suit === "hearts" || c.suit === "diamonds")
-        .sort((a, b) => (suitOrder[a.suit] || 99) - (suitOrder[b.suit] || 99));
-      const blacks = cards
-        .filter((c) => c.suit === "clubs" || c.suit === "spades")
-        .sort((a, b) => (suitOrder[a.suit] || 99) - (suitOrder[b.suit] || 99));
-
-      const [first, second] = reds.length >= blacks.length ? [reds, blacks] : [blacks, reds];
-      const result = [];
-      const max = Math.max(first.length, second.length);
-      for (let i = 0; i < max; i++) {
-        if (i < first.length) result.push(first[i]);
-        if (i < second.length) result.push(second[i]);
-      }
-      return result;
-    }
-
-    const rankOf = (card) => {
-      if (card.rank === "JOKER") {
-        const assigned = assignment[card.id];
-        if (assigned && rankOrder[assigned]) {
-          return rankOrder[assigned];
-        }
-        return 99; // sin asignación fija, va al final
-      }
-      return rankOrder[card.rank] ?? 99;
-    };
-
-    return [...cards].sort((a, b) => rankOf(a) - rankOf(b));
-  };
-  
   const handleMeldClick = (playerIndex, meldIndex) => {
     if (
       selectedMeld &&
@@ -146,55 +84,6 @@ const GameTable = () => {
     } else {
       setSelectedMeld({ playerIndex, meldIndex });
     }
-  };
-
-  const makeMeld = (cards, assignment = {}) => ({
-    id: `${Date.now()}-${Math.random()}`,
-    cards: orderCards(cards, assignment),
-    jokerAssignments: assignment || {},
-  });
-
-  const possibleAssignmentsForCards = (cards, baseAssignment = {}) => {
-    const freeJokers = cards.filter(
-      (c) => c.rank === "JOKER" && !Object.prototype.hasOwnProperty.call(baseAssignment, c.id)
-    );
-
-    const results = [];
-    const tryAssign = (index, current) => {
-      if (index === freeJokers.length) {
-        const full = { ...baseAssignment, ...current };
-        if (isValidCombination(cards, full)) {
-          results.push(full);
-        }
-        return;
-      }
-      for (const rank of RANKS) {
-        current[freeJokers[index].id] = rank;
-        tryAssign(index + 1, current);
-      }
-      delete current[freeJokers[index].id];
-    };
-
-    if (freeJokers.length === 0) {
-      if (isValidCombination(cards, baseAssignment)) {
-        return [baseAssignment];
-      }
-      return [];
-    }
-
-    tryAssign(0, {});
-
-    // Eliminar duplicados por valores de los comodines libres
-    const unique = [];
-    const seen = new Set();
-    for (const r of results) {
-      const key = freeJokers.map((j) => r[j.id]).join(",");
-      if (!seen.has(key)) {
-        seen.add(key);
-        unique.push(r);
-      }
-    }
-    return unique;
   };
 
   const finalizeDropCombination = (cards, assignment) => {
@@ -616,26 +505,12 @@ const GameTable = () => {
     }
   };
 
-  const isSoparable = (card) => {
-    return players.some((player) =>
-      (player.combinations || []).some((meld) => {
-        const cards = meld.cards || [];
-        const isGroup =
-          cards.length >= 3 &&
-          cards.every((c) => c.rank === cards[0].rank) &&
-          !cards.some((c) => c.rank === "JOKER");
-        if (!isGroup) return false;
-        return cards.some((c) => c.rank === card.rank && c.suit === card.suit);
-      })
-    );
-  };
-
   const handleSopar = () => {
     if (selectedCards.length === 0) {
       alert("Selecciona las cartas que quieres sopar.");
       return;
     }
-    if (!selectedCards.every(isSoparable)) {
+    if (!selectedCards.every((c) => isSoparable(c, players))) {
       alert("Solo se pueden sopar cartas idénticas a una pierna en mesa.");
       return;
     }
@@ -663,11 +538,6 @@ const GameTable = () => {
       // Se considera que sales en ese momento
       endRound(currentTurn);
     }
-  };
-
-  const RANK_ORDER_MAP = {
-    A: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9, 10: 10,
-    J: 11, Q: 12, K: 13, JOKER: 99,
   };
 
   const sortHand = (mode) => {
@@ -787,101 +657,28 @@ const GameTable = () => {
     setCurrentTurn((currentTurn + 1) % players.length);
   };
 
-  const sumHandValue = (hand) => hand.reduce((sum, c) => sum + cardValue(c), 0);
-
-  const sumCombinationValue = (combinations) =>
-    combinations.reduce(
-      (sum, meld) => sum + meld.cards.reduce((s, c) => s + cardValue(c), 0),
-      0
-    );
-
   const endRound = (winnerIndex) => {
-    const winner = players[winnerIndex];
+    const result = computeEndRound(players, winnerIndex, gameMode);
 
-    if (gameMode === "menos") {
-      // Penalización: el que sale anota 0; el resto suma su mano
-      const updated = players.map((player, index) => {
-        if (player.eliminated) return player;
-        if (index === winnerIndex) return { ...player, points: player.points }; // 0 esta ronda
-        return { ...player, points: player.points + sumHandValue(player.hand) };
-      });
-
-      // Eliminación a 101
-      const afterElimination = updated.map((player) => {
-        if (player.eliminated) return player;
-        if (player.points >= 101) {
-          return { ...player, eliminated: true };
-        }
-        return player;
-      });
-
-      const active = afterElimination.filter((p) => !p.eliminated);
-
-      // Victoria: último en pie
-      if (active.length <= 1) {
-        if (active.length === 1) {
-          setPlayers(afterElimination);
-          setGameOver(true);
-          alert(`¡${active[0].name} ha ganado la partida!`);
-          return;
-        }
-        // Todos eliminados en la misma ronda: gana el de menor puntaje
-        const sorted = [...afterElimination].sort((a, b) => a.points - b.points);
-        setPlayers(afterElimination);
-        setGameOver(true);
-        alert(`¡${sorted[0].name} ha ganado la partida!`);
-        return;
+    if (result.gameOver) {
+      setPlayers(result.players);
+      setGameOver(true);
+      if (result.winnerName) {
+        alert(`¡${result.winnerName} ha ganado la partida!`);
       }
-
-      setPlayers(afterElimination);
-      // Nueva ronda: repartir de nuevo
-      startNewRound(winnerIndex, afterElimination);
-    } else {
-      // Loba de Más: sumar combinaciones +5 por combinación para el que sale
-      const updated = players.map((player, index) => {
-        if (player.eliminated) return player;
-        let roundPoints = sumCombinationValue(player.combinations);
-        if (index === winnerIndex) {
-          roundPoints += player.combinations.length * 5;
-        }
-        return { ...player, points: player.points + roundPoints };
-      });
-
-      // Victoria: primero en llegar a 150
-      const reached = updated.find((p) => p.points >= 150);
-      if (reached) {
-        setPlayers(updated);
-        setGameOver(true);
-        alert(`¡${reached.name} ha ganado la partida!`);
-        return;
-      }
-
-      setPlayers(updated);
-      startNewRound(winnerIndex, updated);
+      return;
     }
+
+    setPlayers(result.players);
+    startNewRound(winnerIndex, result.players);
   };
 
   const startNewRound = (winnerIndex, currentPlayers) => {
-    // Resetear manos y repartir
-    const tempDeck = generateDeck();
-    const newPlayers = currentPlayers.map((player) => {
-      if (player.eliminated) {
-        return { ...player, hand: [], combinations: [] };
-      }
-      return {
-        ...player,
-        hand: tempDeck.splice(0, 9),
-        combinations: [],
-      };
-    });
-
-    const firstDiscard = tempDeck.length > 0 ? tempDeck.splice(0, 1)[0] : null;
-
-    setPlayers(newPlayers);
-    setDeck(tempDeck);
-    if (firstDiscard) setDiscardPile([firstDiscard]);
-    else setDiscardPile([]);
-    setCurrentTurn(winnerIndex >= 0 ? winnerIndex : 0);
+    const result = sharedStartNewRound(winnerIndex, currentPlayers);
+    setPlayers(result.players);
+    setDeck(result.deck);
+    setDiscardPile(result.discardPile);
+    setCurrentTurn(result.currentTurn);
     setSelectedCards([]);
     setSelectedMeld(null);
     setPendingJokers(0);
@@ -891,36 +688,6 @@ const GameTable = () => {
   };
 
   // --- Simulación de rivales (bots) ---
-  const findBotCombination = (hand) => {
-    // Busca una combinación válida de 3 o 4 cartas
-    const tryCombo = (indices) => {
-      const cards = indices.map((i) => hand[i]);
-      return isValidCombination(cards) ? cards : null;
-    };
-
-    // 3 cartas
-    for (let a = 0; a < hand.length; a++) {
-      for (let b = a + 1; b < hand.length; b++) {
-        for (let c = b + 1; c < hand.length; c++) {
-          const combo = tryCombo([a, b, c]);
-          if (combo) return combo;
-        }
-      }
-    }
-    // 4 cartas
-    for (let a = 0; a < hand.length; a++) {
-      for (let b = a + 1; b < hand.length; b++) {
-        for (let c = b + 1; c < hand.length; c++) {
-          for (let d = c + 1; d < hand.length; d++) {
-            const combo = tryCombo([a, b, c, d]);
-            if (combo) return combo;
-          }
-        }
-      }
-    }
-    return null;
-  };
-
   useEffect(() => {
     if (!gameStarted || !autoPlayOpponents) return;
     if (currentTurn === 0) return; // humano
@@ -1200,20 +967,22 @@ const GameTable = () => {
       </div>
 
       {/* Rivales en sus posiciones */}
-      {players.map((p, i) => {
-        if (i === 0) return null;
-        let posClass = "pos-right";
-        if (players.length === 2) posClass = "pos-top";
-        else if (i === 2) posClass = "pos-top";
-        else if (i === 3) posClass = "pos-left";
-        return (
-          <div key={i} className={`opponent-badge ${posClass} ${i === currentTurn ? "active" : ""}`}>
-            <span className="opp-deck">🂠</span>
-            <span className="opp-count">{p.hand.length}</span>
-            <span className="opp-name">{p.name}</span>
-          </div>
-        );
-      })}
+      <div className="opponents-layer">
+        {players.map((p, i) => {
+          if (i === 0) return null;
+          let posClass = "pos-right";
+          if (players.length === 2) posClass = "pos-top";
+          else if (i === 2) posClass = "pos-top";
+          else if (i === 3) posClass = "pos-left";
+          return (
+            <div key={i} className={`opponent-badge ${posClass} ${i === currentTurn ? "active" : ""}`}>
+              <span className="opp-deck">🂠</span>
+              <span className="opp-count">{p.hand.length}</span>
+              <span className="opp-name">{p.name}</span>
+            </div>
+          );
+        })}
+      </div>
 
       {/* Zona inferior: mano del jugador activo */}
       <section className="bottom-area current-turn">

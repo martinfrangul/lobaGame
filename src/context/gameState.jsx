@@ -1,5 +1,5 @@
 import { createContext, useContext, useState } from "react";
-import { generateDeck } from "../utils/deck";
+import { generateDeck } from "@shared";
 
 const GameContext = createContext();
 
