@@ -19,13 +19,17 @@ export function useOnlineGame() {
     const handleVisibility = () => {
       if (document.visibilityState !== "visible") return;
       const s = socketRef.current || getSocket();
+      if (!s.connected) s.connect();
       const code = localStorage.getItem("loba_room_code");
       const token = localStorage.getItem("loba_player_token");
-      if (code && token && !roomRef.current) {
+      if (code && token) {
         s.emit("room:reconnect", { code, token }, (res) => {
           if (res?.ok) {
             localStorage.setItem("loba_room_code", res.code);
             if (res.token) localStorage.setItem("loba_player_token", res.token);
+          } else {
+            localStorage.removeItem("loba_room_code");
+            localStorage.removeItem("loba_player_token");
           }
         });
       }
@@ -39,7 +43,7 @@ export function useOnlineGame() {
       setConnected(true);
       const code = localStorage.getItem("loba_room_code");
       const token = localStorage.getItem("loba_player_token");
-      if (code && token && !roomRef.current) {
+      if (code && token) {
         const s = socketRef.current || getSocket();
         s.emit("room:reconnect", { code, token }, (res) => {
           if (!res?.ok) {
