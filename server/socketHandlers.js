@@ -640,6 +640,7 @@ export function registerHandlers(io) {
             emitState(io, room);
           }, 6000);
       }
+      }
       emitState(io, room);
     });
 

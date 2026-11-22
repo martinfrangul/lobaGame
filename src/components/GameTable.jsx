@@ -50,6 +50,7 @@ const GameTable = () => {
   const [moveChoice, setMoveChoice] = useState(null); // { meldRef, naturalCard, jokerCard, leftRank, rightRank }
   const [showLegend, setShowLegend] = useState(false);
   const [autoPlayOpponents, setAutoPlayOpponents] = useState(false);
+  const [simulateAll, setSimulateAll] = useState(false);
   const [lastDrawnCardId, setLastDrawnCardId] = useState(null);
   const [dragIndex, setDragIndex] = useState(null);
   const [dragOverIndex, setDragOverIndex] = useState(null);
@@ -797,7 +798,7 @@ const GameTable = () => {
   // --- Simulación de rivales (bots) ---
   useEffect(() => {
     if (!gameStarted || !autoPlayOpponents) return;
-    if (currentTurn === 0) return; // humano
+    if (currentTurn === 0 && !simulateAll) return; // humano (salvo simulación total)
     if (gameOver) return;
 
     const timer = setTimeout(() => {
@@ -946,6 +947,17 @@ const GameTable = () => {
             />
             Simular rivales automáticamente
           </label>
+          <label className="setup-checkbox">
+            <input
+              type="checkbox"
+              checked={simulateAll}
+              onChange={(e) => {
+                setSimulateAll(e.target.checked);
+                if (e.target.checked) setAutoPlayOpponents(true);
+              }}
+            />
+            Simular toda la partida (bot)
+          </label>
           <button className="start-button" onClick={startGame}>
             Iniciar partida
           </button>
@@ -1035,8 +1047,8 @@ const GameTable = () => {
           ))}
         </span>
         <span className="thinking-slot">
-          {autoPlayOpponents && currentTurn !== 0 && (
-            <span className="bot-thinking">Rival pensando…</span>
+          {(autoPlayOpponents || simulateAll) && (simulateAll || currentTurn !== 0) && (
+            <span className="bot-thinking">Bot pensando…</span>
           )}
         </span>
         <button className="icon-btn" onClick={() => setShowLegend(true)} title="Leyenda">❓</button>
@@ -1104,14 +1116,14 @@ const GameTable = () => {
         {players[currentTurn] && (
           <>
             <PlayerHand
-              cards={players[autoPlayOpponents && currentTurn !== 0 ? 0 : currentTurn].hand}
-              selectedCards={autoPlayOpponents && currentTurn !== 0 ? [] : selectedCards}
-              onCardSelect={autoPlayOpponents && currentTurn !== 0 ? undefined : handleCardSelect}
+              cards={players[(autoPlayOpponents || simulateAll) && (simulateAll || currentTurn !== 0) ? 0 : currentTurn].hand}
+              selectedCards={(autoPlayOpponents || simulateAll) && (simulateAll || currentTurn !== 0) ? [] : selectedCards}
+              onCardSelect={(autoPlayOpponents || simulateAll) && (simulateAll || currentTurn !== 0) ? undefined : handleCardSelect}
               isFaceDown={false}
               soparableIds={[]}
               lastDrawnCardId={drawnFromDiscard ? drawnCardId : null}
-              onSort={autoPlayOpponents && currentTurn !== 0 ? undefined : sortHand}
-              draggable={!(autoPlayOpponents && currentTurn !== 0)}
+              onSort={(autoPlayOpponents || simulateAll) && (simulateAll || currentTurn !== 0) ? undefined : sortHand}
+              draggable={!((autoPlayOpponents || simulateAll) && (simulateAll || currentTurn !== 0))}
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
@@ -1119,7 +1131,7 @@ const GameTable = () => {
               dragIndex={dragIndex}
               dragOverIndex={dragOverIndex}
             />
-            {!(autoPlayOpponents && currentTurn !== 0) && (
+            {!((autoPlayOpponents || simulateAll) && (simulateAll || currentTurn !== 0)) && (
             <div className="actions">
               <button className="icon-btn" onClick={() => handleDrawCard("deck")} disabled={cardDrawn} title="Robar del mazo">🂠</button>
               <button className="icon-btn" onClick={() => handleDrawCard("discardPile")} disabled={cardDrawn || discardPile.length === 0 || !(discardPile.length && canUseDiscardCard(discardPile[discardPile.length - 1], players[currentTurn]?.hand || [], players, jokerMode))} title="Robar del pozo">📥</button>
