@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import PlayerHand from "./PlayerHand";
+import VictoryScreen from "./VictoryScreen";
 import Card from "./Card";
 import DiscardPile from "./DiscardPile";
 import { useGameContext } from "../context/gameState";
@@ -36,6 +37,8 @@ const GameTable = () => {
   const [notice, setNotice] = useState(null);
   const [roundResult, setRoundResult] = useState(null);
   const [roundCountdown, setRoundCountdown] = useState(0);
+  const [winnerName, setWinnerName] = useState(null);
+  const [roundHistory, setRoundHistory] = useState([]);
   const [cardDrawn, setCardDrawn] = useState(false);
   const [drawnFromDiscard, setDrawnFromDiscard] = useState(false);
   const [drawnCardId, setDrawnCardId] = useState(null);
@@ -71,7 +74,7 @@ const GameTable = () => {
   }, [roundResult, roundCountdown]);
 
   const startGame = () => {
-    const result = sharedStartGame({ playerCount }, deck);
+    const result = sharedStartGame({ playerCount }, generateDeck());
 
     setPlayers(result.players);
     setDeck(result.deck);
@@ -86,6 +89,8 @@ const GameTable = () => {
     setDrawnFromDiscard(false);
     setDrawnCardId(null);
     setGameOver(false);
+    setWinnerName(null);
+    setRoundHistory([]);
     setGameStarted(true);
   };
   
@@ -758,18 +763,25 @@ const GameTable = () => {
 
     setPlayers(result.players);
 
+    const deltas = result.players.map((p, i) => p.points - (basePlayers[i]?.points || 0));
+    const entry = {
+      winnerName: basePlayers[winnerIndex]?.name || `Jugador ${winnerIndex + 1}`,
+      deltas,
+      players: result.players,
+    };
+    setRoundHistory((prev) => [...prev, entry]);
+
     if (result.gameOver) {
       setGameOver(true);
-      if (result.winnerName) {
-        setNotice(`¡${result.winnerName} ha ganado la partida!`);
-      }
+      setWinnerName(result.winnerName || entry.winnerName);
+      setRoundResult(null);
+      setNotice(`¡${result.winnerName || entry.winnerName} ha ganado la partida!`);
       return;
     }
 
-    const deltas = result.players.map((p, i) => p.points - (players[i]?.points || 0));
     setRoundResult({
       winnerIndex,
-      winnerName: players[winnerIndex]?.name || `Jugador ${winnerIndex + 1}`,
+      winnerName: entry.winnerName,
       players: result.players,
       deltas,
     });
@@ -978,6 +990,29 @@ const GameTable = () => {
 
     return () => clearTimeout(timer);
   }, [currentTurn, autoPlayOpponents, gameStarted, gameOver, roundResult]);
+
+  if (gameOver) {
+    return (
+      <VictoryScreen
+        winnerName={winnerName}
+        players={players}
+        roundHistory={roundHistory}
+        gameMode={gameMode}
+        onPlayAgain={() => {
+          setGameOver(false);
+          setWinnerName(null);
+          setRoundHistory([]);
+          startGame();
+        }}
+        onMenu={() => {
+          setGameOver(false);
+          setWinnerName(null);
+          setRoundHistory([]);
+          setGameStarted(false);
+        }}
+      />
+    );
+  }
 
   if (!gameStarted) {
     return (
