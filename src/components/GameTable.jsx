@@ -19,6 +19,7 @@ import {
   computeEndRound,
   findBotCombination,
   shuffleDeck,
+  generateDeck,
 } from "@shared";
 
 const GameTable = () => {
