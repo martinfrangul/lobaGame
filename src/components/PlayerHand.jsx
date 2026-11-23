@@ -8,6 +8,7 @@ const PlayerHand = ({
   isFaceDown,
   soparableIds,
   lastDrawnCardId,
+  mustUseCardId,
   draggable,
   onDragStart,
   onDragOver,
@@ -114,7 +115,7 @@ const PlayerHand = ({
                 isSelected={isSelected}
                 isSoparable={isSoparable}
                 isDrawn={lastDrawnCardId === card.id}
-                isMustUse={lastDrawnCardId === card.id}
+                isMustUse={mustUseCardId === card.id}
               />
             </div>
           );

@@ -1225,3 +1225,39 @@ button:disabled {
 .round-table th { font-size: 12px; opacity: 0.8; }
 .round-table tr.eliminated td { opacity: 0.45; }
 .round-countdown { font-size: 13px; opacity: 0.8; margin: 8px 0; }
+
+/* Indicador de turno */
+.turn-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 6px;
+  box-shadow: 0 0 0 0 rgba(34,197,94,0.7);
+}
+.turn-dot.your-turn {
+  background: #22c55e;
+  animation: turnPulse 1.2s infinite;
+}
+.turn-dot.other-turn {
+  background: #ef4444;
+}
+@keyframes turnPulse {
+  0% { box-shadow: 0 0 0 0 rgba(34,197,94,0.7); }
+  70% { box-shadow: 0 0 0 8px rgba(34,197,94,0); }
+  100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+}
+
+/* Indicador reconectando */
+.reconnecting-badge {
+  position: fixed;
+  top: 14px;
+  right: 60px;
+  background: rgba(245,158,11,0.95);
+  color: #111827;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  z-index: 1001;
+}

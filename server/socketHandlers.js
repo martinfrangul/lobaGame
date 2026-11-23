@@ -62,7 +62,7 @@ function emitState(io, room) {
     const player = game.players[idx];
     const sock = io.sockets.sockets.get(rp.socketId);
     if (sock && player) {
-      sock.emit("state:private", { hand: player.hand || [] });
+      sock.emit("state:private", { hand: player.hand || [], lastDrawnCardId: game.lastDrawnCardId || null });
     }
   });
 }
@@ -84,6 +84,7 @@ function createGame(room) {
     cardDrawn: false,
     drawnFromDiscard: false,
     drawnCardId: null,
+    lastDrawnCardId: null,
     pendingJokers: 0,
     gameOver: false,
     started: true,
@@ -259,6 +260,7 @@ export function registerHandlers(io) {
         game.cardDrawn = true;
         game.drawnFromDiscard = false;
         game.drawnCardId = null;
+        game.lastDrawnCardId = card.id;
       } else if (source === "discardPile") {
         if (!game.discardPile || game.discardPile.length === 0) return fail(socket, "El pozo está vacío");
         const card = game.discardPile[game.discardPile.length - 1];
@@ -270,6 +272,7 @@ export function registerHandlers(io) {
         game.cardDrawn = true;
         game.drawnFromDiscard = true;
         game.drawnCardId = card.id;
+        game.lastDrawnCardId = card.id;
       } else {
         return fail(socket, "Origen inválido");
       }
@@ -338,6 +341,7 @@ export function registerHandlers(io) {
         game.pendingJokers = 0;
         game.drawnFromDiscard = false;
         game.drawnCardId = null;
+        game.lastDrawnCardId = null;
         game.currentTurn = (game.currentTurn + 1) % game.players.length;
       }
       emitState(io, room);

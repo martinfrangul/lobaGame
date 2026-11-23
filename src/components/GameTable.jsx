@@ -1125,6 +1125,7 @@ const GameTable = () => {
       {gameOver && <h1>¡Juego terminado!</h1>}
 
       <header className="top-bar">
+        <span className={`turn-dot ${currentTurn === 0 ? "your-turn" : "other-turn"}`} />
         <span className="turn-indicator">Turno: {players[currentTurn]?.name}</span>
         <span className="scoreboard">
           {players.map((p, i) => (
@@ -1208,7 +1209,8 @@ const GameTable = () => {
               onCardSelect={autoPlayOpponents && currentTurn !== 0 ? undefined : handleCardSelect}
               isFaceDown={false}
               soparableIds={[]}
-              lastDrawnCardId={drawnFromDiscard ? drawnCardId : null}
+              lastDrawnCardId={cardDrawn ? lastDrawnCardId : null}
+              mustUseCardId={drawnFromDiscard ? drawnCardId : null}
               onSort={sortHand}
               draggable={!(autoPlayOpponents && currentTurn !== 0)}
               onDragStart={handleDragStart}

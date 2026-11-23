@@ -8,6 +8,7 @@ const OnlineGameTable = ({ game }) => {
   const {
     publicState,
     privateHand,
+    lastDrawnCardId,
     room,
     socketId,
     draw,
@@ -199,6 +200,7 @@ const OnlineGameTable = ({ game }) => {
       )}
 
       <header className="top-bar">
+        <span className={`turn-dot ${myIndex === currentTurn ? "your-turn" : "other-turn"}`} />
         <span className="turn-indicator">Turno: {players[currentTurn]?.name}</span>
         <span className="scoreboard">
           {players.map((p, i) => (
@@ -277,7 +279,8 @@ const OnlineGameTable = ({ game }) => {
               onCardSelect={isMyTurn ? handleCardSelect : undefined}
               isFaceDown={false}
               soparableIds={soparableIds}
-              lastDrawnCardId={publicState.drawnFromDiscard ? publicState.drawnCardId : null}
+              lastDrawnCardId={lastDrawnCardId}
+              mustUseCardId={publicState.drawnFromDiscard ? publicState.drawnCardId : null}
               onSort={handleSort}
               draggable={false}
               onDragStart={() => {}}

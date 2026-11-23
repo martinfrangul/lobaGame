@@ -8,6 +8,7 @@ export function useOnlineGame() {
   const [room, setRoom] = useState(null);
   const [publicState, setPublicState] = useState(null);
   const [privateHand, setPrivateHand] = useState([]);
+  const [lastDrawnCardId, setLastDrawnCardId] = useState(null);
   const [promptJoker, setPromptJoker] = useState(null);
   const [promptMove, setPromptMove] = useState(null);
   const [error, setError] = useState(null);
@@ -32,6 +33,12 @@ export function useOnlineGame() {
             localStorage.removeItem("loba_player_token");
           }
         });
+        // Auto-refresh de respaldo si no se recupera
+        setTimeout(() => {
+          if (localStorage.getItem("loba_room_code") && !roomRef.current) {
+            window.location.reload();
+          }
+        }, 3000);
       }
     };
     document.addEventListener("visibilitychange", handleVisibility);
@@ -60,7 +67,7 @@ export function useOnlineGame() {
     const onDisconnect = () => setConnected(false);
     const onRoomUpdate = (r) => { roomRef.current = r; setRoom(r); };
     const onStatePublic = (st) => setPublicState(st);
-    const onStatePrivate = (st) => setPrivateHand(st.hand || []);
+    const onStatePrivate = (st) => { setPrivateHand(st.hand || []); setLastDrawnCardId(st.lastDrawnCardId || null); };
     const onGameStarted = () => { setWinner(null); setGameOver(false); };
     const onGameOver = (e) => { setWinner(e?.winnerName || null); setGameOver(true); };
     const onError = (e) => setError(typeof e === "string" ? e : e?.message || "Error");
@@ -204,6 +211,7 @@ export function useOnlineGame() {
     room,
     publicState,
     privateHand,
+    lastDrawnCardId,
     promptJoker,
     promptMove,
     error,
