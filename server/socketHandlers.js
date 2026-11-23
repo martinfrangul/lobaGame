@@ -109,6 +109,42 @@ import {
 } from "./rooms.js";
 
 export function registerHandlers(io) {
+  function resolveEmptyHand(game, room, idx) {
+    const prevPlayers = game.players;
+    const result = computeEndRound(game.players, idx, game.config.gameMode);
+    const deltas = result.players.map((p, i) => p.points - (prevPlayers[i]?.points || 0));
+    game.players = result.players;
+    if (result.gameOver) {
+      game.gameOver = true;
+      const msg = result.winnerName ? `¡${result.winnerName} ha ganado la partida!` : "Juego terminado";
+      io.to(room.code).emit("info", { message: msg });
+      io.to(room.code).emit("game:over", { winnerName: result.winnerName });
+    } else {
+      game.roundResult = {
+        winnerIndex: idx,
+        winnerName: result.winnerName || game.players[idx]?.name || `Jugador ${idx + 1}`,
+        players: result.players,
+        deltas,
+      };
+      if (game.roundTimer) clearTimeout(game.roundTimer);
+      game.roundTimer = setTimeout(() => {
+        if (!room.game || room.game !== game || !game.roundResult) return;
+        const round = sharedStartNewRound(idx, game.players);
+        game.players = round.players;
+        game.deck = round.deck;
+        game.discardPile = round.discardPile;
+        game.currentTurn = round.currentTurn;
+        game.cardDrawn = false;
+        game.pendingJokers = 0;
+        game.drawnFromDiscard = false;
+        game.drawnCardId = null;
+        game.roundResult = null;
+        game.roundTimer = null;
+        emitState(io, room);
+      }, 6000);
+    }
+  }
+
   io.on("connection", (socket) => {
     socket.on("room:create", (payload, cb) => {
       try {
@@ -331,6 +367,11 @@ export function registerHandlers(io) {
           game.drawnFromDiscard = false;
           game.drawnCardId = null;
         }
+        if (player.hand.length === 0) {
+          resolveEmptyHand(game, room, idx);
+          emitState(io, room);
+          return;
+        }
         emitState(io, room);
         return;
       }
@@ -344,6 +385,11 @@ export function registerHandlers(io) {
         if (game.drawnFromDiscard && !(player.hand || []).some((c) => c.id === game.drawnCardId)) {
           game.drawnFromDiscard = false;
           game.drawnCardId = null;
+        }
+        if (player.hand.length === 0) {
+          resolveEmptyHand(game, room, idx);
+          emitState(io, room);
+          return;
         }
         emitState(io, room);
         return;
@@ -387,6 +433,9 @@ export function registerHandlers(io) {
         if (game.drawnFromDiscard && !(player.hand || []).some((c) => c.id === game.drawnCardId)) {
           game.drawnFromDiscard = false;
           game.drawnCardId = null;
+        if (player.hand.length === 0) {
+          resolveEmptyHand(game, room, idx);
+        }
         }
       };
 
@@ -530,6 +579,9 @@ export function registerHandlers(io) {
           game.drawnFromDiscard = false;
           game.drawnCardId = null;
         }
+        if (player.hand.length === 0) {
+          resolveEmptyHand(game, room, idx);
+        }
         return true;
       };
 
@@ -579,6 +631,9 @@ export function registerHandlers(io) {
       if (game.drawnFromDiscard && !(player.hand || []).some((c) => c.id === game.drawnCardId)) {
         game.drawnFromDiscard = false;
         game.drawnCardId = null;
+      }
+      if (player.hand.length === 0) {
+        resolveEmptyHand(game, room, idx);
       }
       game.pendingMoveChoice = null;
       emitState(io, room);
@@ -681,6 +736,9 @@ export function registerHandlers(io) {
         if (game.drawnFromDiscard && !(player.hand || []).some((c) => c.id === game.drawnCardId)) {
           game.drawnFromDiscard = false;
           game.drawnCardId = null;
+        }
+        if (player.hand.length === 0) {
+          resolveEmptyHand(game, room, idx);
         }
       } else if (choice.type === "substitute") {
         const ctx = choice.context || {};

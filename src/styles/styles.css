@@ -696,9 +696,9 @@ button:disabled {
   width: 100%;
   align-items: center;
   justify-content: center;
-  max-height: 90px;
+  max-height: 220px;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: auto;
 }
 
 .layout-2p .player-combinations {
@@ -853,9 +853,9 @@ button:disabled {
   justify-content: center;
   width: 100%;
   max-width: none;
-  max-height: 90px;
+  max-height: 220px;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: auto;
 }
 
 .layout-3-4 .bottom-area {
@@ -877,7 +877,7 @@ button:disabled {
 }
 
 .layout-3-4 .table-combinations {
-  max-height: 28vh;
+  max-height: 40vh;
   overflow-y: auto;
 }
 

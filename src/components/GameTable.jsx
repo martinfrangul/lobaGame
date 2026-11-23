@@ -111,23 +111,25 @@ const GameTable = () => {
   };
 
   const finalizeDropCombination = (cards, assignment) => {
-    setPlayers((prev) =>
-      prev.map((player, index) => {
-        if (index !== currentTurn) return player;
-        return {
-          ...player,
-          hand: player.hand.filter(
-            (card) => !cards.some((selected) => selected.id === card.id)
-          ),
-          combinations: [...player.combinations, makeMeld(cards, assignment)],
-        };
-      })
-    );
+    const updatedPlayers = players.map((player, index) => {
+      if (index !== currentTurn) return player;
+      return {
+        ...player,
+        hand: player.hand.filter(
+          (card) => !cards.some((selected) => selected.id === card.id)
+        ),
+        combinations: [...player.combinations, makeMeld(cards, assignment)],
+      };
+    });
+    setPlayers(updatedPlayers);
     if (drawnFromDiscard && cards.some((c) => c.id === drawnCardId)) {
       setDrawnFromDiscard(false);
       setDrawnCardId(null);
     }
     setSelectedCards([]);
+    if ((updatedPlayers[currentTurn]?.hand || []).length === 0) {
+      endRound(currentTurn, updatedPlayers);
+    }
   };
 
   const handleDropCombination = () => {
@@ -157,44 +159,46 @@ const GameTable = () => {
   const finalizeLayoff = (cards, assignment) => {
     if (!selectedMeld) return;
     const { playerIndex, meldIndex } = selectedMeld;
-    setPlayers((prev) =>
-      prev.map((player, pIndex) => {
-        // Actualizar combinaciones del dueño del meld
-        if (pIndex === playerIndex) {
-          const updatedCombinations = player.combinations.map((meld, mIndex) => {
-            if (mIndex !== meldIndex) return meld;
-            return makeMeld(cards, assignment);
-          });
-          // Si el dueño es el jugador actual, quitar cartas de su mano
-          if (playerIndex === currentTurn) {
-            return {
-              ...player,
-              hand: player.hand.filter(
-                (card) => !selectedCards.some((selected) => selected.id === card.id)
-              ),
-              combinations: updatedCombinations,
-            };
-          }
-          return { ...player, combinations: updatedCombinations };
-        }
-        // Si el dueño no es el actual pero el jugador actual aportó cartas, quitarlas de su mano
-        if (pIndex === currentTurn && playerIndex !== currentTurn) {
+    const updatedPlayers = players.map((player, pIndex) => {
+      // Actualizar combinaciones del dueño del meld
+      if (pIndex === playerIndex) {
+        const updatedCombinations = player.combinations.map((meld, mIndex) => {
+          if (mIndex !== meldIndex) return meld;
+          return makeMeld(cards, assignment);
+        });
+        // Si el dueño es el jugador actual, quitar cartas de su mano
+        if (playerIndex === currentTurn) {
           return {
             ...player,
             hand: player.hand.filter(
               (card) => !selectedCards.some((selected) => selected.id === card.id)
             ),
+            combinations: updatedCombinations,
           };
         }
-        return player;
-      })
-    );
+        return { ...player, combinations: updatedCombinations };
+      }
+      // Si el dueño no es el actual pero el jugador actual aportó cartas, quitarlas de su mano
+      if (pIndex === currentTurn && playerIndex !== currentTurn) {
+        return {
+          ...player,
+          hand: player.hand.filter(
+            (card) => !selectedCards.some((selected) => selected.id === card.id)
+          ),
+        };
+      }
+      return player;
+    });
+    setPlayers(updatedPlayers);
     if (drawnFromDiscard && selectedCards.some((c) => c.id === drawnCardId)) {
       setDrawnFromDiscard(false);
       setDrawnCardId(null);
     }
     setSelectedCards([]);
     setSelectedMeld(null);
+    if ((updatedPlayers[currentTurn]?.hand || []).length === 0) {
+      endRound(currentTurn, updatedPlayers);
+    }
   };
 
   const handleLayoff = () => {
@@ -428,49 +432,50 @@ const GameTable = () => {
 
   const finalizeMoveJoker = (meldRef, naturalCard, jokerCard, chosenRank) => {
     const { playerIndex, meldIndex } = meldRef;
-    setPlayers((prev) =>
-      prev.map((player, pIndex) => {
-        if (pIndex !== playerIndex) {
-          // Quitar la carta natural de la mano del jugador actual si no es el dueño
-          if (pIndex === currentTurn && playerIndex !== currentTurn) {
-            return {
-              ...player,
-              hand: player.hand.filter((c) => c.id !== naturalCard.id),
-            };
-          }
-          return player;
-        }
-
-        const meld = player.combinations[meldIndex];
-        const jokerIndex = meld.cards.findIndex((c) => c.id === jokerCard.id);
-        const newCards = meld.cards.map((c, i) =>
-          i === jokerIndex ? naturalCard : c
-        );
-        newCards.push(jokerCard);
-
-        const newAssignment = { ...(meld.jokerAssignments || {}) };
-        newAssignment[jokerCard.id] = chosenRank;
-
-        if (!isValidCombination(newCards, newAssignment)) {
-          setNotice("El movimiento del comodín no es válido.");
-          return player;
-        }
-
-        const updatedCombinations = player.combinations.map((m, mi) => {
-          if (mi !== meldIndex) return m;
-          return makeMeld(newCards, newAssignment);
-        });
-
-        const newHand = player.hand.filter((c) => c.id !== naturalCard.id);
-        return { ...player, hand: newHand, combinations: updatedCombinations };
-      })
+    const owner = players[playerIndex];
+    const meld = owner?.combinations?.[meldIndex];
+    if (!meld) return;
+    const jokerIndex = meld.cards.findIndex((c) => c.id === jokerCard.id);
+    const newCards = meld.cards.map((c, i) =>
+      i === jokerIndex ? naturalCard : c
     );
+    newCards.push(jokerCard);
+
+    const newAssignment = { ...(meld.jokerAssignments || {}) };
+    newAssignment[jokerCard.id] = chosenRank;
+
+    if (!isValidCombination(newCards, newAssignment)) {
+      setNotice("El movimiento del comodín no es válido.");
+      return;
+    }
+
+    const updatedPlayers = players.map((player, pIndex) => {
+      if (pIndex !== playerIndex) {
+        if (pIndex === currentTurn && playerIndex !== currentTurn) {
+          return {
+            ...player,
+            hand: player.hand.filter((c) => c.id !== naturalCard.id),
+          };
+        }
+        return player;
+      }
+      const updatedCombinations = player.combinations.map((m, mi) => {
+        if (mi !== meldIndex) return m;
+        return makeMeld(newCards, newAssignment);
+      });
+      const newHand = player.hand.filter((c) => c.id !== naturalCard.id);
+      return { ...player, hand: newHand, combinations: updatedCombinations };
+    });
+    setPlayers(updatedPlayers);
     setSelectedCards([]);
     setSelectedMeld(null);
     setMoveChoice(null);
     if (drawnFromDiscard && selectedCards.some((c) => c.id === drawnCardId)) {
       setDrawnFromDiscard(false);
       setDrawnCardId(null);
+    }
+    if ((updatedPlayers[currentTurn]?.hand || []).length === 0) {
+      endRound(currentTurn, updatedPlayers);
     }
   };
 
@@ -596,20 +601,19 @@ const GameTable = () => {
 
     const soparedIds = new Set(selectedCards.map((c) => c.id));
 
-    setDiscardPile((prev) => [...prev, ...selectedCards]);
-    setPlayers((prev) =>
-      prev.map((player, index) =>
-        index === currentTurn
-          ? {
-              ...player,
-              hand: player.hand.filter((c) => !soparedIds.has(c.id)),
-            }
-          : player
-      )
+    const updatedPlayers = players.map((player, index) =>
+      index === currentTurn
+        ? {
+            ...player,
+            hand: player.hand.filter((c) => !soparedIds.has(c.id)),
+          }
+        : player
     );
 
-    const currentPlayer = players[currentTurn];
-    const newHand = currentPlayer.hand.filter((c) => !soparedIds.has(c.id));
+    setDiscardPile((prev) => [...prev, ...selectedCards]);
+    setPlayers(updatedPlayers);
+
+    const newHand = updatedPlayers[currentTurn].hand;
 
     setSelectedCards([]);
 
@@ -620,7 +624,7 @@ const GameTable = () => {
 
     if (newHand.length === 0) {
       // Se considera que sales en ese momento
-      endRound(currentTurn);
+      endRound(currentTurn, updatedPlayers);
     }
   };
 
@@ -748,8 +752,9 @@ const GameTable = () => {
     setCurrentTurn((currentTurn + 1) % players.length);
   };
 
-  const endRound = (winnerIndex) => {
-    const result = computeEndRound(players, winnerIndex, gameMode);
+  const endRound = (winnerIndex, playersOverride) => {
+    const basePlayers = playersOverride || players;
+    const result = computeEndRound(basePlayers, winnerIndex, gameMode);
 
     setPlayers(result.players);
 
