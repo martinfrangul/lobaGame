@@ -106,6 +106,7 @@ import {
   leaveRoom,
   setReady,
   reconnectPlayer,
+  markDisconnected,
   getRoom,
 } from "./rooms.js";
 
@@ -866,8 +867,8 @@ export function registerHandlers(io) {
     });
 
     socket.on("disconnect", () => {
-      const res = leaveRoom(socket.id);
-      if (!res || res.deleted) return;
+      const res = markDisconnected(socket.id);
+      if (!res) return;
       if (res.room) emitRoomUpdate(io, res.room);
     });
   });

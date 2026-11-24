@@ -31,6 +31,7 @@ export function createRoom(socketId, name, config) {
     players: [{ socketId, name, ready: false, connected: true, token }],
     started: false,
     game: null,
+    lastEmptyAt: null,
   };
   rooms.set(code, room);
   socketToRoom.set(socketId, code);
@@ -70,6 +71,7 @@ export function reconnectPlayer(code, token, socketId) {
   }
   player.socketId = socketId;
   player.connected = true;
+  room.lastEmptyAt = null;
   socketToRoom.set(socketId, room.code);
 
   // update game player socketId if started
@@ -78,6 +80,20 @@ export function reconnectPlayer(code, token, socketId) {
     if (gp) gp.socketId = socketId;
   }
   return { room, token };
+}
+
+export function markDisconnected(socketId) {
+  const code = socketToRoom.get(socketId);
+  if (!code) return null;
+  const room = rooms.get(code);
+  if (!room) {
+    socketToRoom.delete(socketId);
+    return null;
+  }
+  const p = room.players.find((x) => x.socketId === socketId);
+  if (p) p.connected = false;
+  socketToRoom.delete(socketId);
+  return { room };
 }
 
 export function leaveRoom(socketId) {
@@ -106,6 +122,23 @@ export function leaveRoom(socketId) {
   if (room.host === socketId) room.host = room.players[0].socketId;
   return { room };
 }
+
+// Limpieza de salas huérfanas (sin jugadores conectados) tras 30 min
+const CLEANUP_INTERVAL = 30 * 60 * 1000;
+setInterval(() => {
+  const now = Date.now();
+  for (const [code, room] of rooms) {
+    if (!room.lastEmptyAt) {
+      if (room.players.every((p) => !p.connected)) room.lastEmptyAt = now;
+      continue;
+    }
+    if (room.players.some((p) => p.connected)) {
+      room.lastEmptyAt = null;
+    } else if (now - room.lastEmptyAt > CLEANUP_INTERVAL) {
+      rooms.delete(code);
+    }
+  }
+}, 60 * 1000).unref?.();
 
 export function setReady(socketId, ready) {
   const room = getRoomBySocket(socketId);
