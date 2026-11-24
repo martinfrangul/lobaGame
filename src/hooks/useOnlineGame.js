@@ -5,6 +5,7 @@ export function useOnlineGame() {
   const socketRef = useRef(null);
   const roomRef = useRef(null);
   const [connected, setConnected] = useState(false);
+  const [socketId, setSocketId] = useState(null);
   const [room, setRoom] = useState(null);
   const [publicState, setPublicState] = useState(null);
   const [privateHand, setPrivateHand] = useState([]);
@@ -46,8 +47,10 @@ export function useOnlineGame() {
     const s = connectSocket();
     socketRef.current = s;
     setConnected(s.connected);
+    setSocketId(s.id);
     const onConnect = () => {
       setConnected(true);
+      setSocketId(getSocket().id);
       const code = localStorage.getItem("loba_room_code");
       const token = localStorage.getItem("loba_player_token");
       if (code && token) {
@@ -173,7 +176,7 @@ export function useOnlineGame() {
   }, [emit]);
 
   const myIndex = publicState?.players
-    ? publicState.players.findIndex((p) => p.name === (room?.players?.find((rp) => rp.socketId === getSocket().id)?.name))
+    ? publicState.players.findIndex((p) => p.name === (room?.players?.find((rp) => rp.socketId === socketId)?.name))
     : -1;
 
   // actions
@@ -207,7 +210,7 @@ export function useOnlineGame() {
 
   return {
     connected,
-    socketId: getSocket().id,
+    socketId,
     room,
     publicState,
     privateHand,

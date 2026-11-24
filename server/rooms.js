@@ -71,6 +71,7 @@ export function reconnectPlayer(code, token, socketId) {
   }
   player.socketId = socketId;
   player.connected = true;
+  if (room.host === oldSocketId) room.host = socketId;
   room.lastEmptyAt = null;
   socketToRoom.set(socketId, room.code);
 
