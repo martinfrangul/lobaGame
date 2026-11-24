@@ -437,9 +437,9 @@ export function registerHandlers(io) {
         if (game.drawnFromDiscard && !(player.hand || []).some((c) => c.id === game.drawnCardId)) {
           game.drawnFromDiscard = false;
           game.drawnCardId = null;
+        }
         if (player.hand.length === 0) {
           resolveEmptyHand(game, room, idx);
-        }
         }
       };
 
@@ -666,7 +666,9 @@ export function registerHandlers(io) {
       }
 
       if (player.hand.length === 0) {
+        const prevPlayers = game.players;
         const result = computeEndRound(game.players, idx, game.config.gameMode);
+        const deltas = result.players.map((p, i) => p.points - (prevPlayers[i]?.points || 0));
         game.players = result.players;
         if (result.gameOver) {
           game.gameOver = true;
@@ -674,8 +676,6 @@ export function registerHandlers(io) {
           io.to(room.code).emit("info", { message: msg });
           io.to(room.code).emit("game:over", { winnerName: result.winnerName });
         } else {
-          const prevPlayers = game.players;
-          const deltas = result.players.map((p, i) => p.points - (prevPlayers[i]?.points || 0));
           game.roundResult = {
             winnerIndex: idx,
             winnerName: result.winnerName || game.players[idx]?.name || `Jugador ${idx + 1}`,
@@ -725,6 +725,9 @@ export function registerHandlers(io) {
         if (game.drawnFromDiscard && !(player.hand || []).some((c) => c.id === game.drawnCardId)) {
           game.drawnFromDiscard = false;
           game.drawnCardId = null;
+        }
+        if (player.hand.length === 0) {
+          resolveEmptyHand(game, room, idx);
         }
       } else if (choice.type === "layoff") {
         const ctx = choice.context || {};
